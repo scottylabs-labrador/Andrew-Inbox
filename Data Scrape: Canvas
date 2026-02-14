@@ -1,0 +1,115 @@
+import requests
+from datetime import datetime
+
+CANVAS_BASE_URL = "https://canvas.cmu.edu"   # <-- replace
+CANVAS_TOKEN = "7752~ZJvGCuCBUQFfEBhEQJDCPfFcv8WXQVK3VGaePLL2yDVMR7kVaJX9yeREyHAvvPCW"       # <-- (pretend api key works)
+
+HEADERS = {
+    "Authorization": f"Bearer {CANVAS_TOKEN}"
+}
+
+# =========================
+# HELPER FUNCTIONS
+# =========================
+
+def print_header(title):
+    print("\n" + "=" * len(title))
+    print(title)
+    print("=" * len(title))
+
+def format_date(date_str):
+    if not date_str:
+        return "No due date"
+    return datetime.fromisoformat(date_str.replace("Z", "+00:00")).strftime("%Y-%m-%d %H:%M")
+
+def get_paginated(url):
+    results = []
+    while url:
+        r = requests.get(url, headers=HEADERS)
+        r.raise_for_status()
+        results.extend(r.json())
+        url = r.links.get("next", {}).get("url")
+    return results
+
+# =========================
+# 1. GET COURSES
+# =========================
+
+courses = get_paginated(f"{CANVAS_BASE_URL}/api/v1/courses")
+
+print_header("COURSES")
+
+for c in courses:
+    print(f"- {c.get('name', 'Unnamed Course')} (ID: {c['id']})")
+
+# =========================
+# 2. ASSIGNMENTS & DUE DATES
+# =========================
+
+print_header("ASSIGNMENTS & DUE DATES")
+
+for course in courses:
+    course_id = course["id"]
+    course_name = course.get("name", "Unnamed Course")
+
+    try:
+        assignments = get_paginated(
+            f"{CANVAS_BASE_URL}/api/v1/courses/{course_id}/assignments"
+        )
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 403:
+            print(f"\n{course_name}")
+            print("-" * len(course_name))
+            print(f"Assignment access blocked for {course_name}")
+            continue  # Skip to the next course
+        else:
+            raise  # Re-raise other HTTP errors
+
+    if not assignments:
+        continue
+
+    print(f"\n{course_name}")
+    print("-" * len(course_name))
+
+    for a in assignments:
+        if not a.get("due_at"):
+            continue
+
+        print(
+            f"• {a['name']:<35} | "
+            f"Due: {format_date(a['due_at'])} | "
+            f"Points: {a.get('points_possible', 'N/A')}"
+        )
+
+# =========================
+# 3. CURRENT GRADES (IF ALLOWED)
+# =========================
+
+print_header("CURRENT GRADES (IF AVAILABLE)")
+
+for course in courses:
+    course_id = course["id"]
+    course_name = course.get("name", "Unnamed Course")
+
+    r = requests.get(
+        f"{CANVAS_BASE_URL}/api/v1/courses/{course_id}?include[]=total_scores",
+        headers=HEADERS
+    )
+
+    if r.status_code != 200:
+        print(f"{course_name:<30} | Grade access blocked")
+        continue
+
+    data = r.json()
+    enrollments = data.get("enrollments", [])
+
+    if not enrollments or enrollments[0].get("computed_current_score") is None:
+        print(f"{course_name:<30} | Grade not released")
+    else:
+        score = enrollments[0]["computed_current_score"]
+        print(f"{course_name:<30} | Current Grade: {score}%")
+
+
+
+print_header("DATA EXTRACTION COMPLETE")
+print("Canvas data successfully retrieved.")
