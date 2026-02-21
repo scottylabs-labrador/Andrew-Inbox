@@ -20,6 +20,6 @@
   "homepage": "https://github.com/scottylabs-labrador/Andrew-Inbox#readme",
   "dependencies": {
     "selenium": "^2.20.0",
-    "selenium-webdriver": "^4.40.0"
+    "selenium-webdriver": "^4.41.0"
   }
 }
