@@ -15,16 +15,16 @@ const {By, Builder, Browser} = require('selenium-webdriver');
 
 
     let usernameInput = await driver.wait(
-      until.elementLocated(By.id(username)),
+      until.elementLocated(By.id("username")),
       10000
     ); 
-    await usernameInput.sendKeys(usernameInput);
+    await usernameInput.sendKeys(username);
     
     let passwordInput = await driver.wait(
-      until.elementLocated(By.id(password)),
+      until.elementLocated(By.id("password")),
       10000
     ); 
-    await passwordInput.sendKeys(passwordInput);
+    await passwordInput.sendKeys(password);
     await passwordInput.sendKeys("\n");
 
 
@@ -35,5 +35,6 @@ const {By, Builder, Browser} = require('selenium-webdriver');
     } catch (e) {
       console.log(e);
     } finally {
+      
   }
 }())
