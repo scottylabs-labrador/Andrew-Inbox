@@ -2,6 +2,7 @@
   "name": "Hello Extensions",
   "description": "Base Level Extension",
   "version": "1.0",
+  "host_permissions" : ["https://canvas.cmu.edu/*, https://edstem.org/*, gradescope, piazza"],
   "manifest_version": 3,
   "action": {
     "default_popup": "hello.html",

@@ -1,0 +1,24 @@
+{
+  "name": "andrew-inbox",
+  "version": "1.0.0",
+  "description": "",
+  "main": "selenium.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/scottylabs-labrador/Andrew-Inbox.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/scottylabs-labrador/Andrew-Inbox/issues"
+  },
+  "homepage": "https://github.com/scottylabs-labrador/Andrew-Inbox#readme",
+  "dependencies": {
+    "selenium-webdriver": "^4.40.0"
+  }
+}
