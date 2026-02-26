@@ -1,4 +1,4 @@
-const {By, Builder, Browser} = require('selenium-webdriver');
+const { By, Builder, Browser, until } = require('selenium-webdriver');
 
 (async function firstTest() {
   let driver;
@@ -21,7 +21,7 @@ const {By, Builder, Browser} = require('selenium-webdriver');
     await usernameInput.sendKeys(username);
     
     let passwordInput = await driver.wait(
-      until.elementLocated(By.id("password")),
+      until.elementLocated(By.id("passwordinput")),
       10000
     ); 
     await passwordInput.sendKeys(password);
