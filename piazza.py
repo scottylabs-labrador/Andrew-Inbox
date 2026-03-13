@@ -26,7 +26,12 @@ def get_piazza_posts(driver):
             title = post.find_element(By.CSS_SELECTOR, ".title_text").text
             snippet = post.find_element(By.CSS_SELECTOR, ".snippet").text
 
-            posts_data.append({"title":title,"snippet":snippet})
+            id_wrapper = post.find_element(By.CSS_SELECTOR, ".feed-item-wrapper").get_attribute("id")
+            post_id = id_wrapper.replace("_wrapper", "")
+            base_url = driver.current_url.split("#")[0]
+            post_url = f"{base_url}/post/{post_id}"
+
+            posts_data.append({"title":title,"snippet":snippet,"post_url":post_url})
         except:
             continue
     
