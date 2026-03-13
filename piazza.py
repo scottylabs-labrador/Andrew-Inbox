@@ -1,19 +1,36 @@
 # REQUIRES CANVAS DATA SCRAPE TO BE RUN FIRST TO GET COURSES (change line 1 to match file name))
 from data_scrape import CANVAS_BASE_URL, HEADERS, get_paginated, print_header
 import requests, time
-from bs4 import BeautifulSoup
 from selenium import webdriver
-from gradescopeapi.classes._helpers._assignment_helpers import get_assignments_student_view
+from selenium.webdriver.common.by import By
 
 # =========================
-# 4. GRADESCOPE LOGIN (IF APPLICABLE)
+# 4. PIAZZA LOGIN (IF APPLICABLE)
 # =========================
 
-print_header("External Tools (Gradescope)")
+print_header("External Tools (Piazza)")
 
 session = requests.Session()
 
 canvas_url = f"{CANVAS_BASE_URL}/api/v1/courses"
+
+
+def get_piazza_posts(driver):
+    
+    posts_data = []
+
+    posts = driver.find_elements(By.CSS_SELECTOR, "li.feed_item")
+
+    for post in posts:
+        try:
+            title = post.find_element(By.CSS_SELECTOR, ".title_text").text
+            snippet = post.find_element(By.CSS_SELECTOR, ".snippet").text
+
+            posts_data.append({"title":title,"snippet":snippet})
+        except:
+            continue
+    
+    return posts_data
 
 def get_paginated_session(url):
     time.sleep(1)  
@@ -25,7 +42,7 @@ def get_paginated_session(url):
         url = r.links.get("next", {}).get("url")
     return results
 
-courses = get_paginated_session(canvas_url);
+courses = get_paginated_session(canvas_url)
 
 for course in courses:
     course_id = course["id"]
@@ -58,7 +75,7 @@ for course in courses:
 
             # Access sessionless launch URL for Piazza
             launch_url = f"{CANVAS_BASE_URL}/api/v1/courses/{course_id}/external_tools/sessionless_launch?url={tool.get('url', '')}"
-            piazza_url = "";
+            piazza_url = ""
             r = session.get(launch_url, headers=HEADERS)
             if r.status_code == 200:
                 print("Successfully accessed Piazza sessionless launch URL.")
@@ -91,24 +108,22 @@ for course in courses:
                 # Grab cookies from response and use with requests
                 for cookie in driver.get_cookies():
                     session.cookies.set(cookie['name'], cookie['value'])                
-                
-                response = session.get(final_url, headers=HEADERS)
-                print(f"Status: {response.status_code}")
-                soup = BeautifulSoup(response.text, 'html.parser')
-                print(get_assignments_student_view(soup))
+
+                posts = get_piazza_posts(driver)
+
+                for p in posts:
+                    print(p)
 
                 driver.quit()
                 
-                
             else:
-                print("Failed to access Gradescope URL.")
+                print("Failed to access Piazza URL.")
 
 
 # Parse a beautiful soup object return list of posts with descriptions etc
-def get_piazza_posts():
 
 
 print_header("DATA EXTRACTION COMPLETE")
-print("Gradescope data successfully retrieved.")
+print("Piazza data successfully retrieved.")
 
 

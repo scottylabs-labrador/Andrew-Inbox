@@ -25,7 +25,7 @@ def get_paginated_session(url):
         url = r.links.get("next", {}).get("url")
     return results
 
-courses = get_paginated_session(canvas_url);
+courses = get_paginated_session(canvas_url)
 
 for course in courses:
     course_id = course["id"]
@@ -57,7 +57,7 @@ for course in courses:
 
             # Access sessionless launch URL for Gradescope
             launch_url = f"{CANVAS_BASE_URL}/api/v1/courses/{course_id}/external_tools/sessionless_launch?url={tool.get('url', '')}"
-            gscope_url = "";
+            gscope_url = ""
             r = session.get(launch_url, headers=HEADERS)
             if r.status_code == 200:
                 print("Successfully accessed Gradescope sessionless launch URL.")
