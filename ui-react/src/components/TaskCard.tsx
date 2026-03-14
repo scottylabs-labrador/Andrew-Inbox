@@ -3,22 +3,15 @@ import type { Task } from "./ui/useTasks";
 
 interface TaskCardProps {
   taskd: Task;
-  color: string;
-  checked: boolean;
   onToggle: () => void;
 }
 
-export default function TaskCard({
-  taskd,
-  color,
-  checked,
-  onToggle,
-}: TaskCardProps) {
-  // const formattedDate = taskd.due.toLocaleDateString("en-US", {
-  //   month: "short",
-  //   day: "numeric",
-  //   year: "numeric",
-  // });
+export default function TaskCard({ taskd, onToggle }: TaskCardProps) {
+  const formattedDate = taskd.due.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 
   return (
     <Box
@@ -27,7 +20,7 @@ export default function TaskCard({
       px={4}
       py={3}
       w="100%"
-      opacity={checked ? 0.5 : 1}
+      opacity={taskd.checked ? 0.5 : 1}
     >
       <HStack gap={3} align="start">
         <Box
@@ -35,8 +28,8 @@ export default function TaskCard({
           h={4}
           borderRadius="sm"
           border="2px solid"
-          borderColor={checked ? "blue.400" : "gray.400"}
-          bg={checked ? "blue.400" : "transparent"}
+          borderColor={taskd.checked ? "blue.400" : "gray.400"}
+          bg={taskd.checked ? "blue.400" : "transparent"}
           cursor="pointer"
           flexShrink={0}
           mt="2px"
@@ -45,7 +38,7 @@ export default function TaskCard({
           alignItems="center"
           justifyContent="center"
         >
-          {checked && (
+          {taskd.checked && (
             <Text fontSize="9px" color="white" lineHeight={1} fontWeight="bold">
               ✓
             </Text>
@@ -56,15 +49,15 @@ export default function TaskCard({
             color="white"
             fontWeight="medium"
             fontSize="sm"
-            textDecoration={checked ? "line-through" : "none"}
+            textDecoration={taskd.checked ? "line-through" : "none"}
           >
             {taskd.assignment}
           </Text>
           <Text color="gray.400" fontSize="xs" mb={0.5}>
-            Due (Enter date here) {/*{formattedDate} */}
+            Due {formattedDate}
           </Text>
           <HStack gap={1}>
-            <Box w={2} h={2} borderRadius="full" bg={color} />
+            <Box w={2} h={2} borderRadius="full" bg="red.400" />
             <Text color="gray.400" fontSize="xs">
               {taskd.course}
             </Text>

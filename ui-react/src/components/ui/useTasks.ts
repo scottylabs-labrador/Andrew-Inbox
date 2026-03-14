@@ -4,8 +4,9 @@ export interface Task {
   id: number;
   assignment: string;
   course: string;
-  due: string;
+  due: Date;
   platform: string;
+  checked: boolean;
 }
 
 export const useTasks = () => {
@@ -20,8 +21,13 @@ export const useTasks = () => {
           throw new Error("Could not find todos.json in public folder");
         return res.json();
       })
-      .then((data: Task[]) => {
-        setTodos(data);
+      .then((data: any[]) => {
+        const hydratedData = data.map((task) => ({
+          ...task,
+          due: new Date(task.due),
+          checked: task.checked ?? false,
+        }));
+        setTodos(hydratedData);
         setLoading(false);
       })
       .catch((err) => {
@@ -40,8 +46,9 @@ export const useTasks = () => {
       id: Date.now(),
       assignment,
       course,
-      due: dueDate,
+      due: new Date(dueDate),
       platform,
+      checked: false,
     };
     setTodos((prev) => [newTodo, ...prev]);
   };
@@ -56,5 +63,18 @@ export const useTasks = () => {
     );
   };
 
-  return { todos, loading, addAssignment, deleteAssignment, updateAssignment };
+  const toggleAssignment = (id: number) => {
+    setTodos((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, checked: !t.checked } : t)),
+    );
+  };
+
+  return {
+    todos,
+    loading,
+    addAssignment,
+    deleteAssignment,
+    updateAssignment,
+    toggleAssignment,
+  };
 };
