@@ -4,16 +4,16 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 
-
-load_dotenv(".env")
-
-
-client = OpenAI(
-    api_key=os.getenv("OPENROUTER_API"),
-    base_url="https://openrouter.ai/api/v1",
-)
-
 def summarize(description):
+
+    load_dotenv(".env")
+
+
+    client = OpenAI(
+        api_key=os.getenv("OPENROUTER_API"),
+        base_url="https://openrouter.ai/api/v1",
+    )
+
     response = client.chat.completions.create(
         model = "openai/gpt-5.2",
         messages = [
@@ -25,3 +25,4 @@ def summarize(description):
     )
 
     return response.choices[0].message.content
+
