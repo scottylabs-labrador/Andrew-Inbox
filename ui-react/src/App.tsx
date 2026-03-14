@@ -5,7 +5,7 @@ import LoginPage from "./components/LoginPage";
 import MainView from "./components/MainView";
 
 function App() {
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(true);
 
   return (
     <Box
@@ -13,6 +13,7 @@ function App() {
       overflow="hidden"
       boxShadow="0 8px 32px rgba(0,0,0,0.5)"
       display="inline-block"
+      position="relative"
     >
       {loggedIn ? (
         <MainView />

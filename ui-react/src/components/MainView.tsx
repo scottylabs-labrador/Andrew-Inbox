@@ -208,7 +208,7 @@ export default function MainView() {
         bottom="4"
         right="4"
         borderRadius="full"
-        boxShadow="md"
+        boxShadow="lg"
         colorPalette="blue"
         size="xl"
       >

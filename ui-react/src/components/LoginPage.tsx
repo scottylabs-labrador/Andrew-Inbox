@@ -28,27 +28,48 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
   return (
     <Box
-      bg="gray.800" w="360px" h="600px"
-      borderRadius="2xl" overflow="hidden"
-      display="flex" flexDirection="column"
-      alignItems="center" justifyContent="center"
-      px={8} position="relative"
+      bg="gray.800"
+      w="360px"
+      h="600px"
+      borderRadius="2xl"
+      overflow="hidden"
+      display="flex"
+      flexDirection="column"
+      alignItems="center"
+      justifyContent="center"
+      px={8}
+      position="relative"
     >
       {/* ScottyLabs Logo */}
       <VStack gap={1} mb={8}>
         <Box position="relative" w="48px" h="48px">
-          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg
+            width="48"
+            height="48"
+            viewBox="0 0 48 48"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
             <defs>
-              <linearGradient id="scottyGrad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="#40D2FC"/>
-                <stop offset="50%" stopColor="#1F4CE0"/>
-                <stop offset="100%" stopColor="#FB1A32"/>
+              <linearGradient
+                id="scottyGrad"
+                x1="0"
+                y1="0"
+                x2="48"
+                y2="48"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop offset="0%" stopColor="#40D2FC" />
+                <stop offset="50%" stopColor="#1F4CE0" />
+                <stop offset="100%" stopColor="#FB1A32" />
               </linearGradient>
             </defs>
           </svg>
         </Box>
         <Text
-          fontSize="xl" fontWeight="bold" letterSpacing="widest"
+          fontSize="xl"
+          fontWeight="bold"
+          letterSpacing="widest"
           style={{
             background: "linear-gradient(90deg, #40D2FC, #1F4CE0, #FB1A32)",
             WebkitBackgroundClip: "text",
@@ -74,7 +95,11 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           borderColor={idInvalid ? "red.400" : "gray.600"}
           color="white"
           _placeholder={{ color: "gray.500" }}
-          _focus={{ borderColor: idInvalid ? "red.400" : "blue.400", outline: "none", boxShadow: "none" }}
+          _focus={{
+            borderColor: idInvalid ? "red.400" : "blue.400",
+            outline: "none",
+            boxShadow: "none",
+          }}
           borderRadius="lg"
           size="md"
         />
@@ -90,7 +115,11 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           borderColor={passwordInvalid ? "red.400" : "gray.600"}
           color="white"
           _placeholder={{ color: "gray.500" }}
-          _focus={{ borderColor: passwordInvalid ? "red.400" : "blue.400", outline: "none", boxShadow: "none" }}
+          _focus={{
+            borderColor: passwordInvalid ? "red.400" : "blue.400",
+            outline: "none",
+            boxShadow: "none",
+          }}
           borderRadius="lg"
           size="md"
         />
@@ -106,15 +135,22 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             borderColor={tokenInvalid ? "red.400" : "gray.600"}
             color="white"
             _placeholder={{ color: "gray.500" }}
-            _focus={{ borderColor: tokenInvalid ? "red.400" : "blue.400", outline: "none", boxShadow: "none" }}
+            _focus={{
+              borderColor: tokenInvalid ? "red.400" : "blue.400",
+              outline: "none",
+              boxShadow: "none",
+            }}
             borderRadius="lg"
             size="md"
             pr="40px"
           />
           <Box
-            position="absolute" right="10px" top="50%"
+            position="absolute"
+            right="10px"
+            top="50%"
             transform="translateY(-50%)"
-            cursor="pointer" color="gray.400"
+            cursor="pointer"
+            color="gray.400"
             _hover={{ color: "white" }}
             onClick={() => setShowPopup(true)}
             zIndex={1}
@@ -132,7 +168,8 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
         {/* Submit button */}
         <Button
-          w="100%" mt={2}
+          w="100%"
+          mt={2}
           bg="blue.500"
           color="white"
           _hover={{ bg: "blue.400" }}
@@ -148,7 +185,8 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
       {showPopup && (
         <Box
           position="absolute"
-          top="50%" left="50%"
+          top="50%"
+          left="50%"
           transform="translate(-50%, -50%)"
           bg="gray.700"
           borderRadius="xl"
@@ -163,18 +201,28 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             <Text fontSize="sm" fontWeight="bold" color="white">
               How to get your Canvas Token
             </Text>
-            <Box cursor="pointer" color="gray.400" _hover={{ color: "white" }} onClick={() => setShowPopup(false)}>
+            <Box
+              cursor="pointer"
+              color="gray.400"
+              _hover={{ color: "white" }}
+              onClick={() => setShowPopup(false)}
+            >
               <FiX size={16} />
             </Box>
           </HStack>
           <Text fontSize="xs" color="gray.300" lineHeight="1.7">
             Find your Canvas Access Token via:{"\n"}
             <Text as="span" color="gray.100">
-              Canvas › Account › Settings › Approved Integrations › + New Access Token
+              Canvas › Account › Settings › Approved Integrations › + New Access
+              Token
             </Text>
           </Text>
           <Text fontSize="xs" color="gray.300" lineHeight="1.7" mt={2}>
-            Enter a Purpose (<Text as="span" color="gray.100">'Andrew Inbox'</Text>), Expiration Date, and Expiration Time.
+            Enter a Purpose (
+            <Text as="span" color="gray.100">
+              'Andrew Inbox'
+            </Text>
+            ), Expiration Date, and Expiration Time.
           </Text>
           <Text fontSize="xs" color="gray.300" lineHeight="1.7" mt={2}>
             You'll need to login again only after your expiration date. Thanks!
@@ -185,7 +233,11 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
       {/* Dimmed backdrop when popup open */}
       {showPopup && (
         <Box
-          position="absolute" top={0} left={0} right={0} bottom={0}
+          position="absolute"
+          top={0}
+          left={0}
+          right={0}
+          bottom={0}
           bg="blackAlpha.600"
           borderRadius="2xl"
           zIndex={9}
