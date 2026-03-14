@@ -20,6 +20,7 @@ def get_piazza_posts(driver):
     posts_data = []
 
     posts = driver.find_elements(By.CSS_SELECTOR, "li.feed_item")
+    course_name = driver.find_element(By.CSS_SELECTOR, "#topbar_current_class_number").text
 
     for post in posts:
         try:
@@ -31,7 +32,12 @@ def get_piazza_posts(driver):
             base_url = driver.current_url.split("#")[0]
             post_url = f"{base_url}/post/{post_id}"
 
-            posts_data.append({"title":title,"snippet":snippet,"post_url":post_url})
+            # post.click();
+            # WebDriverWait(driver, 10).until(lambda d: d.current_url != old_url)
+            # link = driver.current_url
+            # driver.back()
+
+            posts_data.append({"course":course_name,"title":title,"snippet":snippet,"post_url":post_url})
         except:
             continue
     
