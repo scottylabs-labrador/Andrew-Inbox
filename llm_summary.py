@@ -25,7 +25,3 @@ def summarize(description):
     )
 
     return response.choices[0].message.content
-
-response = summarize("My office hour from 3:30 to 4:30 will be delayed by 15min due to a personal schedule change. My office hour will run from 3:45 to 4:45 today. The change is only for today.")
-
-print(response);
