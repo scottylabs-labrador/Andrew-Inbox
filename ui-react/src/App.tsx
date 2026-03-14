@@ -1,21 +1,26 @@
 import "./App.css";
-import { Box, VStack } from "@chakra-ui/react";
+import { Box } from "@chakra-ui/react";
+import { useState } from "react";
+import LoginPage from "./components/LoginPage";
+import MainView from "./components/MainView";
+
 function App() {
+  const [loggedIn, setLoggedIn] = useState(false);
+
   return (
-    <>
-      <Box
-        width="350px"
-        height="500px"
-        overflow="hidden"
-        display="flex"
-        flexDirection="column"
-        bg="bg.panel"
-        position="relative"
-        p={4}
-      >
-        <VStack flex="1" overflowY="auto" p="4" align="stretch"></VStack>
-      </Box>
-    </>
+    <Box
+      borderRadius="2xl"
+      overflow="hidden"
+      boxShadow="0 8px 32px rgba(0,0,0,0.5)"
+      display="inline-block"
+    >
+      {loggedIn ? (
+        <MainView />
+      ) : (
+        <LoginPage onLogin={() => setLoggedIn(true)} />
+      )}
+    </Box>
   );
 }
+
 export default App;

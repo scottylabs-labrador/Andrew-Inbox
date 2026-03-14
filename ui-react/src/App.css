@@ -1,1 +1,5 @@
-
+html, body, #root {
+  background: transparent !important;
+  margin: 0;
+  padding: 0;
+}
