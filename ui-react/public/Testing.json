@@ -1,0 +1,58 @@
+[
+  {
+    "id": 1,
+    "assignment": "A",
+    "course": "2",
+    "due": "2/25/26",
+    "platform": "A.com"
+  },
+  {
+    "id": 2,
+    "assignment": "B",
+    "course": "3",
+    "due": "2/26/26",
+    "platform": "B.com"
+  },
+  {
+    "id": 3,
+    "assignment": "C",
+    "course": "4",
+    "due": "2/27/26",
+    "platform": "A.com"
+  },
+  {
+    "id": 4,
+    "assignment": "D",
+    "course": "5",
+    "due": "2/28/26",
+    "platform": "B.com"
+  },
+  {
+    "id": 5,
+    "assignment": "E",
+    "course": "6",
+    "due": "3/1/26",
+    "platform": "A.com"
+  },
+  {
+    "id": 6,
+    "assignment": "F",
+    "course": "7",
+    "due": "3/2/26",
+    "platform": "B.com"
+  },
+  {
+    "id": 7,
+    "assignment": "G",
+    "course": "8",
+    "due": "3/3/26",
+    "platform": "A.com"
+  },
+  {
+    "id": 8,
+    "assignment": "H",
+    "course": "9",
+    "due": "3/4/26",
+    "platform": "B.com"
+  }
+]
