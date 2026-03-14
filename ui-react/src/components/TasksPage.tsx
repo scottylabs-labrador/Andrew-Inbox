@@ -1,4 +1,4 @@
-import { Center, IconButton, Spinner, VStack } from "@chakra-ui/react";
+import { Center, HStack, IconButton, Spinner, VStack } from "@chakra-ui/react";
 import { useTasks } from "./ui/useTasks";
 import { LuPlus } from "react-icons/lu";
 import TaskCard from "./TaskCard";
@@ -18,7 +18,10 @@ export default function TasksPage() {
   if (loading) {
     return (
       <Center h="200px">
-        <Spinner color="blue.500" />
+        <HStack>
+          <p> Loading </p>
+          <Spinner color="blue.500" />
+        </HStack>
       </Center>
     );
   }
