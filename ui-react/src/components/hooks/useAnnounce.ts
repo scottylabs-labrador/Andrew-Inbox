@@ -5,6 +5,7 @@ export interface Announce {
   title: string;
   course: string;
   text: string;
+  date: Date;
   isUnread: boolean;
 }
 
@@ -20,7 +21,12 @@ export const useAnnouce = () => {
         return res.json();
       })
       .then((data: any[]) => {
-        setAnn(data);
+        const hydrated = data.map((item) => ({
+          ...item,
+          date: new Date(item.date),
+          isUnread: item.isUnread ?? true,
+        }));
+        setAnn(hydrated);
         setLoading(false);
       })
       .catch((err) => {
@@ -29,7 +35,7 @@ export const useAnnouce = () => {
       });
   }, []);
 
-  const toggleAssignment = (id: number) => {
+  const toggleAnnounce = (id: number) => {
     setAnn((prev) =>
       prev.map((t) => (t.id === id ? { ...t, isUnread: !t.isUnread } : t)),
     );
@@ -38,6 +44,6 @@ export const useAnnouce = () => {
   return {
     ann,
     loading,
-    toggleAssignment,
+    toggleAnnounce,
   };
 };

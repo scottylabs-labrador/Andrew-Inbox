@@ -1,8 +1,8 @@
 import { Box, HStack, Text } from "@chakra-ui/react";
 import { useState } from "react";
 import TimeToggle from "./TimeToggle";
-import TasksPage from "./TasksPage";
-import AnnoucementPage from "./AnnoucementPage";
+import TasksPage from "./Task/TasksPage";
+import AnnoucementPage from "./Announcement/AnnoucementPage";
 
 export default function MainView() {
   const [activeTab, setActiveTab] = useState<"todo" | "announcements">("todo");

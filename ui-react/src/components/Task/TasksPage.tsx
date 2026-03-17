@@ -7,7 +7,7 @@ import {
   Spinner,
   VStack,
 } from "@chakra-ui/react";
-import { useTasks } from "./hooks/useTasks";
+import { useTasks } from "../hooks/useTasks";
 import TaskCard from "./TaskCard";
 import { LuPlus } from "react-icons/lu";
 import TaskForm from "./TaskForm";
@@ -19,9 +19,9 @@ interface Props {
 
 const emptyMessages: Record<string, string> = {
   All: "No assignments yet! Time to relax?  ☕️",
-  Day: "Nothing due in the next 24 hours!  🎉",
-  Week: "The next week looks clear!  🏖️",
-  Month: "No deadlines in the next month!  🗓️",
+  Day: "Nothing due today!  🎉",
+  Week: "The rest of the week looks clear!  🏖️",
+  Month: "No deadlines in this month!  🗓️",
 };
 
 export default function TasksPage({ filter }: Props) {
@@ -43,26 +43,44 @@ export default function TasksPage({ filter }: Props) {
     if (filter === "All") return true;
 
     const now = new Date();
-    const taskDate = new Date(task.due);
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const taskDate = new Date(
+      task.due.getFullYear(),
+      task.due.getMonth(),
+      task.due.getDate(),
+    );
 
-    const diffInMs = taskDate.getTime() - now.getTime();
-    const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+    if (taskDate < today && !task.checked) {
+      return true;
+    }
 
     if (filter === "Day") {
-      return diffInDays >= 0 && diffInDays <= 1;
+      return taskDate.getTime() === today.getTime();
     }
+
     if (filter === "Week") {
-      return diffInDays >= 0 && diffInDays <= 7;
+      const sunday = new Date(today);
+      sunday.setDate(today.getDate() + (6 - today.getDay()));
+      return taskDate <= sunday && taskDate >= today;
     }
+
     if (filter === "Month") {
-      return diffInDays >= 0 && diffInDays <= 30;
+      return (
+        taskDate.getMonth() === today.getMonth() &&
+        taskDate.getFullYear() === today.getFullYear()
+      );
     }
-    return true;
+
+    return false;
   });
 
-  const sortedTasks = [...filteredTodos].sort(
-    (a, b) => a.due.getTime() - b.due.getTime(),
-  );
+  const sortedTasks = [...filteredTodos].sort((a, b) => {
+    if (a.checked !== b.checked) {
+      return a.checked ? 1 : -1;
+    }
+
+    return a.due.getTime() - b.due.getTime();
+  });
 
   return (
     <>

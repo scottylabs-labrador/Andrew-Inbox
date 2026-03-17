@@ -1,5 +1,5 @@
-import { Box, Text, HStack } from "@chakra-ui/react";
-import type { Task } from "./hooks/useTasks";
+import { Box, Text, HStack, Badge } from "@chakra-ui/react";
+import type { Task } from "../hooks/useTasks";
 
 interface TaskCardProps {
   taskd: Task;
@@ -7,6 +7,17 @@ interface TaskCardProps {
 }
 
 export default function TaskCard({ taskd, onToggle }: TaskCardProps) {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const taskDate = new Date(
+    taskd.due.getFullYear(),
+    taskd.due.getMonth(),
+    taskd.due.getDate(),
+  );
+
+  const isOverdue = taskDate < today && !taskd.checked;
+
   const formattedDate = taskd.due.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -28,7 +39,9 @@ export default function TaskCard({ taskd, onToggle }: TaskCardProps) {
           h={4}
           borderRadius="sm"
           border="2px solid"
-          borderColor={taskd.checked ? "blue.400" : "gray.400"}
+          borderColor={
+            taskd.checked ? "blue.400" : isOverdue ? "red.400" : "gray.400"
+          }
           bg={taskd.checked ? "blue.400" : "transparent"}
           cursor="pointer"
           flexShrink={0}
@@ -45,15 +58,28 @@ export default function TaskCard({ taskd, onToggle }: TaskCardProps) {
           )}
         </Box>
         <Box>
-          <Text
-            color="white"
-            fontWeight="medium"
-            fontSize="sm"
-            textDecoration={taskd.checked ? "line-through" : "none"}
-          >
-            {taskd.assignment}
-          </Text>
-          <Text color="gray.400" fontSize="xs" mb={0.5}>
+          <HStack justify="space-between" align="start" mb={0.5}>
+            <Text
+              color="white"
+              fontWeight="medium"
+              fontSize="sm"
+              textDecoration={taskd.checked ? "line-through" : "none"}
+            >
+              {taskd.assignment}
+            </Text>
+            {isOverdue && (
+              <Badge
+                colorPalette="red"
+                variant="solid"
+                size="xs"
+                borderRadius="sm"
+                px={1}
+              >
+                OVERDUE
+              </Badge>
+            )}
+          </HStack>
+          <Text color={isOverdue ? "red.300" : "gray.400"} fontSize="xs" mb={1}>
             Due {formattedDate}
           </Text>
           <HStack gap={1}>
