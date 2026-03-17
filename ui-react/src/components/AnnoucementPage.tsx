@@ -2,7 +2,11 @@ import { Center, HStack, Spinner, VStack } from "@chakra-ui/react";
 import { useAnnouce } from "./hooks/useAnnouce";
 import AnnouncementCard from "./AnnouncementCard";
 
-export default function AnnoucementPage() {
+interface Props {
+  filter: string;
+}
+
+export default function AnnoucementPage({ filter }: Props) {
   const { ann, loading, toggleAssignment } = useAnnouce();
 
   if (loading) {

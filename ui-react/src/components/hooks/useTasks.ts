@@ -42,11 +42,13 @@ export const useTasks = () => {
   }, []);
 
   const addAssignment = (data: NewTaskData) => {
+    const [year, month, day] = data.due.split("-").map(Number);
+
     const newTodo: Task = {
       id: Date.now(),
       assignment: data.assignment,
       course: data.course,
-      due: new Date(data.due),
+      due: new Date(year, month - 1, day),
       platform: "Manual",
       checked: false,
     };

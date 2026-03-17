@@ -13,18 +13,13 @@ import { LuPlus } from "react-icons/lu";
 import TaskForm from "./TaskForm";
 import { useState } from "react";
 
-export default function TasksPage() {
+interface Props {
+  filter: string;
+}
+
+export default function TasksPage({ filter }: Props) {
   const { todos, loading, addAssignment, toggleAssignment } = useTasks();
   const [isOpen, setIsOpen] = useState(false);
-
-  const sortedTasks = [...todos].sort((a, b) => {
-    if (a.checked !== b.checked) return a.checked ? 1 : -1;
-
-    const dateA = a.due instanceof Date ? a.due.getTime() : 0;
-    const dateB = b.due instanceof Date ? b.due.getTime() : 0;
-
-    return dateA - dateB;
-  });
 
   if (loading) {
     return (
@@ -36,6 +31,31 @@ export default function TasksPage() {
       </Center>
     );
   }
+
+  const filteredTodos = todos.filter((task) => {
+    if (filter === "All") return true;
+
+    const now = new Date();
+    const taskDate = new Date(task.due);
+
+    const diffInMs = taskDate.getTime() - now.getTime();
+    const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+
+    if (filter === "Day") {
+      return diffInDays >= 0 && diffInDays <= 1;
+    }
+    if (filter === "Week") {
+      return diffInDays >= 0 && diffInDays <= 7;
+    }
+    if (filter === "Month") {
+      return diffInDays >= 0 && diffInDays <= 30;
+    }
+    return true;
+  });
+
+  const sortedTasks = [...filteredTodos].sort(
+    (a, b) => a.due.getTime() - b.due.getTime(),
+  );
 
   return (
     <>

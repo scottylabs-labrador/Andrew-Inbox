@@ -6,6 +6,12 @@ import AnnoucementPage from "./AnnoucementPage";
 
 export default function MainView() {
   const [activeTab, setActiveTab] = useState<"todo" | "announcements">("todo");
+  const [timeFilter, setTimeFilter] = useState("All");
+
+  const handleTabChange = (tab: "todo" | "announcements") => {
+    setActiveTab(tab);
+    setTimeFilter("All");
+  };
 
   return (
     <Box
@@ -30,7 +36,7 @@ export default function MainView() {
               borderTopRadius="lg"
               borderBottom={activeTab === "todo" ? "none" : "1px solid"}
               borderBottomColor="gray.700"
-              onClick={() => setActiveTab("todo")}
+              onClick={() => handleTabChange("todo")}
               position="relative"
               zIndex={activeTab === "todo" ? 1 : 0}
             >
@@ -53,7 +59,7 @@ export default function MainView() {
                 activeTab === "announcements" ? "none" : "1px solid"
               }
               borderBottomColor="gray.700"
-              onClick={() => setActiveTab("announcements")}
+              onClick={() => handleTabChange("announcements")}
               position="relative"
               zIndex={activeTab === "announcements" ? 1 : 0}
             >
@@ -77,12 +83,16 @@ export default function MainView() {
         borderBottom="1px solid"
         borderColor="gray.700"
       >
-        <TimeToggle />
+        <TimeToggle selected={timeFilter} setSelected={setTimeFilter} />
       </Box>
 
       {/* Content */}
       <Box flex={1} overflowY="auto" px={3} py={3} bg="gray.800">
-        {activeTab === "todo" ? <TasksPage /> : <AnnoucementPage />}
+        {activeTab === "todo" ? (
+          <TasksPage filter={timeFilter} />
+        ) : (
+          <AnnoucementPage filter={timeFilter} />
+        )}
       </Box>
     </Box>
   );
