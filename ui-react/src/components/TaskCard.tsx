@@ -1,5 +1,5 @@
 import { Box, Text, HStack } from "@chakra-ui/react";
-import type { Task } from "./ui/useTasks";
+import type { Task } from "./hooks/useTasks";
 
 interface TaskCardProps {
   taskd: Task;

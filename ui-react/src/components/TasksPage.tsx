@@ -1,5 +1,5 @@
 import { Center, HStack, IconButton, Spinner, VStack } from "@chakra-ui/react";
-import { useTasks } from "./ui/useTasks";
+import { useTasks } from "./hooks/useTasks";
 import { LuPlus } from "react-icons/lu";
 import TaskCard from "./TaskCard";
 

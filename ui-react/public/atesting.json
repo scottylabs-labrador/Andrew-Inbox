@@ -1,0 +1,30 @@
+[
+  {
+    "id": 1,
+    "title": "Monday's class (1/26) will be online",
+    "course": "Course Name",
+    "text": "Hi everyone ❄️ Due to the winter storm and campus updates (see CMU Alert for details...",
+    "isUnread": true
+  },
+  {
+    "id": 2,
+    "title": "Another Announcement",
+    "course": "Course Name",
+    "text": "This is another announcement made by our glorious president Andrew Carnegie...",
+    "isUnread": true
+  },
+  {
+    "id": 3,
+    "title": "Monday's class (1/26) will be online",
+    "course": "Course Name",
+    "text": "Hi everyone ❄️ Due to the winter storm and campus updates (see CMU Alert for details...",
+    "isUnread": false
+  },
+  {
+    "id": 4,
+    "title": "Monday's class (1/26) will be online",
+    "course": "Course Name",
+    "text": "Hi everyone ❄️ Due to the winter storm and campus updates (see CMU Alert for details...",
+    "isUnread": false
+  }
+]

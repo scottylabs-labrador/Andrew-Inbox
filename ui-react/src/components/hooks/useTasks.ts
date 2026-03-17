@@ -17,8 +17,7 @@ export const useTasks = () => {
     // Just fetch the JSON directly
     fetch("/testing.json")
       .then((res) => {
-        if (!res.ok)
-          throw new Error("Could not find todos.json in public folder");
+        if (!res.ok) throw new Error("Could not find data");
         return res.json();
       })
       .then((data: any[]) => {
