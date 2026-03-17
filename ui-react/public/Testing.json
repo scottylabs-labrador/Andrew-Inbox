@@ -4,55 +4,63 @@
     "assignment": "Assignment 1",
     "course": "11-111",
     "due": "2/25/26",
-    "platform": "A.com"
+    "platform": "A.com",
+    "checked": false
   },
   {
     "id": 2,
     "assignment": "Assignment 2",
     "course": "22-222",
     "due": "2/26/26",
-    "platform": "B.com"
+    "platform": "B.com",
+    "checked": false
   },
   {
     "id": 3,
     "assignment": "Assignment 3",
     "course": "33-333",
     "due": "2/27/26",
-    "platform": "A.com"
+    "platform": "A.com",
+    "checked": false
   },
   {
     "id": 4,
     "assignment": "Assignment 4",
     "course": "44-444",
     "due": "2/28/26",
-    "platform": "B.com"
+    "platform": "B.com",
+    "checked": false
   },
   {
     "id": 5,
     "assignment": "Assignment 5",
     "course": "55-555",
     "due": "3/1/26",
-    "platform": "A.com"
+    "platform": "A.com",
+    "checked": false
   },
   {
     "id": 6,
     "assignment": "Assignment 6",
     "course": "66-666",
     "due": "3/2/26",
-    "platform": "B.com"
+    "platform": "B.com",
+    "checked": false
   },
   {
     "id": 7,
     "assignment": "Assignment 7",
     "course": "77-777",
     "due": "3/3/26",
-    "platform": "A.com"
+    "platform": "A.com",
+    "checked": false
   },
   {
     "id": 8,
     "assignment": "Assignment 8",
     "course": "88-888",
     "due": "3/4/26",
-    "platform": "B.com"
+    "platform": "B.com",
+    "checked": false
   }
 ]

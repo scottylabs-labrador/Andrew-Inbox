@@ -14,7 +14,7 @@ import TaskForm from "./TaskForm";
 import { useState } from "react";
 
 export default function TasksPage() {
-  const { todos, loading, toggleAssignment } = useTasks();
+  const { todos, loading, addAssignment, toggleAssignment } = useTasks();
   const [isOpen, setIsOpen] = useState(false);
 
   const sortedTasks = [...todos].sort((a, b) => {
@@ -92,7 +92,7 @@ export default function TasksPage() {
             <TaskForm
               onSubmit={(data) => {
                 setIsOpen(false);
-                console.log(data.assignment);
+                addAssignment(data);
               }}
             />
           </Dialog.Content>

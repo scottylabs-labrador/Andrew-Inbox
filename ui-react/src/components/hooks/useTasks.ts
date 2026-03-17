@@ -9,6 +9,12 @@ export interface Task {
   checked: boolean;
 }
 
+interface NewTaskData {
+  assignment: string;
+  course: string;
+  due: string;
+}
+
 export const useTasks = () => {
   const [todos, setTodos] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +30,7 @@ export const useTasks = () => {
         const hydratedData = data.map((task) => ({
           ...task,
           due: new Date(task.due),
-          checked: task.checked ?? false,
+          checked: !!task.checked,
         }));
         setTodos(hydratedData);
         setLoading(false);
@@ -35,20 +41,16 @@ export const useTasks = () => {
       });
   }, []);
 
-  const addAssignment = (
-    assignment: string,
-    course: string,
-    dueDate: string,
-    platform: string,
-  ) => {
+  const addAssignment = (data: NewTaskData) => {
     const newTodo: Task = {
       id: Date.now(),
-      assignment,
-      course,
-      due: new Date(dueDate),
-      platform,
+      assignment: data.assignment,
+      course: data.course,
+      due: new Date(data.due),
+      platform: "Manual",
       checked: false,
     };
+
     setTodos((prev) => [newTodo, ...prev]);
   };
 
