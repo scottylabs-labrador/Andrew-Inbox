@@ -1,7 +1,16 @@
-import { Center, HStack, IconButton, Spinner, VStack } from "@chakra-ui/react";
+import {
+  Box,
+  Center,
+  Dialog,
+  HStack,
+  IconButton,
+  Spinner,
+  VStack,
+} from "@chakra-ui/react";
 import { useTasks } from "./hooks/useTasks";
-import { LuPlus } from "react-icons/lu";
 import TaskCard from "./TaskCard";
+import { LuPlus } from "react-icons/lu";
+import AddButton from "./AddButton";
 
 export default function TasksPage() {
   const { todos, loading, toggleAssignment } = useTasks();
@@ -28,32 +37,55 @@ export default function TasksPage() {
 
   return (
     <>
-      <VStack gap={3} align="stretch" w="100%" p={4}>
-        {sortedTasks.length > 0 ? (
-          sortedTasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              taskd={task}
-              onToggle={() => toggleAssignment(task.id)}
-            />
-          ))
-        ) : (
-          <p color="gray.500">No assignments yet!</p>
-        )}
-      </VStack>
+      <Dialog.Root size="sm" placement="center">
+        <VStack gap={3} align="stretch" w="100%" p={4}>
+          {sortedTasks.length > 0 ? (
+            sortedTasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                taskd={task}
+                onToggle={() => toggleAssignment(task.id)}
+              />
+            ))
+          ) : (
+            <p color="gray.500">No assignments yet!</p>
+          )}
+        </VStack>
 
-      <IconButton
-        position="absolute"
-        bottom="4"
-        right="4"
-        borderRadius="full"
-        boxShadow="lg"
-        colorPalette="blue"
-        size="xl"
-        aria-label="add"
-      >
-        <LuPlus />
-      </IconButton>
+        <Box position="absolute" bottom="4" right="4">
+          <Dialog.Trigger asChild>
+            <IconButton
+              borderRadius="full"
+              boxShadow="lg"
+              colorPalette="blue"
+              size="xl"
+              aria-label="add"
+            >
+              <LuPlus />
+            </IconButton>
+          </Dialog.Trigger>
+        </Box>
+
+        <Dialog.Backdrop />
+        <Dialog.Positioner
+          position="absolute"
+          top="0"
+          left="0"
+          width="100%"
+          height="100%"
+        >
+          <Dialog.Content
+            bg="gray.700"
+            border="1px solid"
+            borderColor="gray.600"
+            mx="4"
+            borderRadius="lg"
+            boxShadow="0 10px 30px rgba(0,0,0,0.5)"
+          >
+            <AddButton />
+          </Dialog.Content>
+        </Dialog.Positioner>
+      </Dialog.Root>
     </>
   );
 }

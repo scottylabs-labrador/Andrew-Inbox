@@ -1,6 +1,5 @@
 import { Box, HStack, Text } from "@chakra-ui/react";
 import { useState } from "react";
-import { RxHamburgerMenu } from "react-icons/rx";
 import TimeToggle from "./TimeToggle";
 import TasksPage from "./TasksPage";
 import AnnoucementPage from "./AnnoucementPage";
@@ -67,7 +66,6 @@ export default function MainView() {
               </Text>
             </Box>
           </HStack>
-          <Box as={RxHamburgerMenu} color="gray.400" cursor="pointer" mb={2} />
         </HStack>
       </Box>
 
