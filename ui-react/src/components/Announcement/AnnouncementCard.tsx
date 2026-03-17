@@ -3,10 +3,9 @@ import type { Announce } from "../hooks/useAnnounce";
 
 interface Props {
   ann: Announce;
-  onToggle: () => void;
 }
 
-export default function AnnouncementCard({ ann, onToggle }: Props) {
+export default function AnnouncementCard({ ann }: Props) {
   return (
     <Box bg="gray.700" borderRadius="lg" px={4} py={3} w="100%">
       <HStack gap={3} align="start">
@@ -43,16 +42,7 @@ export default function AnnouncementCard({ ann, onToggle }: Props) {
               {ann.course}
             </Text>
           </HStack>
-          <Text
-            color="gray.300"
-            fontSize="xs"
-            overflow="hidden"
-            style={{
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-            }}
-          >
+          <Text color="gray.300" fontSize="xs" lineHeight="short" lineClamp={2}>
             {ann.text}
           </Text>
         </Box>

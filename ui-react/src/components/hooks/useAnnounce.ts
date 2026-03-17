@@ -9,7 +9,7 @@ export interface Announce {
   isUnread: boolean;
 }
 
-export const useAnnouce = () => {
+export const useAnnounce = () => {
   const [ann, setAnn] = useState<Announce[]>([]);
   const [loading, setLoading] = useState(true);
 

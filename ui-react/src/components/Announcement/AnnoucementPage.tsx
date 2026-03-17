@@ -1,6 +1,8 @@
-import { Center, HStack, Spinner, VStack } from "@chakra-ui/react";
-import { useAnnouce } from "../hooks/useAnnounce";
+import { Box, Center, Dialog, HStack, Spinner, VStack } from "@chakra-ui/react";
+import { useAnnounce, type Announce } from "../hooks/useAnnounce";
 import AnnouncementCard from "./AnnouncementCard";
+import AnnoucementOpen from "./AnnouncementOpen";
+import { useState } from "react";
 
 interface Props {
   filter: string;
@@ -14,7 +16,13 @@ const emptyMessages: Record<string, string> = {
 };
 
 export default function AnnoucementPage({ filter }: Props) {
-  const { ann, loading, toggleAnnounce } = useAnnouce();
+  const { ann, loading, toggleAnnounce } = useAnnounce();
+  const [selectedAnn, setSelectedAnn] = useState<Announce | null>(null);
+
+  const handleToggle = (id: number) => {
+    toggleAnnounce(id);
+    setSelectedAnn(null);
+  };
 
   if (loading) {
     return (
@@ -32,10 +40,8 @@ export default function AnnoucementPage({ filter }: Props) {
 
     const now = new Date();
 
-    // 1. Normalize "Today" to Midnight (00:00:00)
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    // 2. Normalize the Announcement date to Midnight
     const annRawDate = new Date(a.date);
     const annDate = new Date(
       annRawDate.getFullYear(),
@@ -73,28 +79,70 @@ export default function AnnoucementPage({ filter }: Props) {
 
   return (
     <>
-      <VStack gap={2}>
-        {sortedAnn.length > 0 ? (
-          sortedAnn.map((item) => (
-            <AnnouncementCard
-              key={item.id}
-              ann={item}
-              onToggle={() => console.log("replace")}
-            />
-          ))
-        ) : (
-          <Center py={10} flexDirection="column">
-            <p
-              style={{
-                color: "gray",
-                textAlign: "center",
-              }}
-            >
-              {emptyMessages[filter] || emptyMessages.All}
-            </p>
-          </Center>
-        )}
-      </VStack>
+      <Dialog.Root
+        size="sm"
+        placement="center"
+        open={!!selectedAnn}
+        onOpenChange={(details) => {
+          if (!details.open) setSelectedAnn(null);
+        }}
+      >
+        <VStack gap={2}>
+          {sortedAnn.length > 0 ? (
+            sortedAnn.map((item) => (
+              <Box
+                key={item.id}
+                w="100%"
+                onClick={() => {
+                  setSelectedAnn(item);
+                  if (item.isUnread) {
+                    toggleAnnounce(item.id);
+                  }
+                }}
+                cursor="pointer"
+              >
+                <AnnouncementCard ann={item} />
+              </Box>
+            ))
+          ) : (
+            <Center py={10} flexDirection="column">
+              <p
+                style={{
+                  color: "gray",
+                  textAlign: "center",
+                }}
+              >
+                {emptyMessages[filter] || emptyMessages.All}
+              </p>
+            </Center>
+          )}
+        </VStack>
+
+        <Dialog.Backdrop />
+        <Dialog.Positioner
+          position="absolute"
+          top="0"
+          left="0"
+          width="100%"
+          height="100%"
+        >
+          <Dialog.Content
+            bg="gray.700"
+            border="1px solid"
+            borderColor="gray.600"
+            mx="4"
+            borderRadius="lg"
+            boxShadow="0 10px 30px rgba(0,0,0,0.5)"
+          >
+            {selectedAnn && (
+              <AnnoucementOpen
+                a={selectedAnn}
+                onToggle={() => handleToggle(selectedAnn.id)}
+              />
+            )}
+          </Dialog.Content>
+        </Dialog.Positioner>
+      </Dialog.Root>
     </>
   );
 }
