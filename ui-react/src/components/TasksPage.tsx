@@ -10,10 +10,12 @@ import {
 import { useTasks } from "./hooks/useTasks";
 import TaskCard from "./TaskCard";
 import { LuPlus } from "react-icons/lu";
-import AddButton from "./AddButton";
+import TaskForm from "./TaskForm";
+import { useState } from "react";
 
 export default function TasksPage() {
   const { todos, loading, toggleAssignment } = useTasks();
+  const [isOpen, setIsOpen] = useState(false);
 
   const sortedTasks = [...todos].sort((a, b) => {
     if (a.checked !== b.checked) return a.checked ? 1 : -1;
@@ -37,7 +39,12 @@ export default function TasksPage() {
 
   return (
     <>
-      <Dialog.Root size="sm" placement="center">
+      <Dialog.Root
+        size="sm"
+        open={isOpen}
+        onOpenChange={(e) => setIsOpen(e.open)}
+        placement="center"
+      >
         <VStack gap={3} align="stretch" w="100%" p={4}>
           {sortedTasks.length > 0 ? (
             sortedTasks.map((task) => (
@@ -82,7 +89,12 @@ export default function TasksPage() {
             borderRadius="lg"
             boxShadow="0 10px 30px rgba(0,0,0,0.5)"
           >
-            <AddButton />
+            <TaskForm
+              onSubmit={(data) => {
+                setIsOpen(false);
+                console.log(data.assignment);
+              }}
+            />
           </Dialog.Content>
         </Dialog.Positioner>
       </Dialog.Root>
