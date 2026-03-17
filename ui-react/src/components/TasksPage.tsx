@@ -17,6 +17,13 @@ interface Props {
   filter: string;
 }
 
+const emptyMessages: Record<string, string> = {
+  All: "No assignments yet! Time to relax?  ☕️",
+  Day: "Nothing due in the next 24 hours!  🎉",
+  Week: "The next week looks clear!  🏖️",
+  Month: "No deadlines in the next month!  🗓️",
+};
+
 export default function TasksPage({ filter }: Props) {
   const { todos, loading, addAssignment, toggleAssignment } = useTasks();
   const [isOpen, setIsOpen] = useState(false);
@@ -75,7 +82,16 @@ export default function TasksPage({ filter }: Props) {
               />
             ))
           ) : (
-            <p color="gray.500">No assignments yet!</p>
+            <Center py={10} flexDirection="column">
+              <p
+                style={{
+                  color: "gray",
+                  textAlign: "center",
+                }}
+              >
+                {emptyMessages[filter] || emptyMessages.All}
+              </p>
+            </Center>
           )}
         </VStack>
 
