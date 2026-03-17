@@ -1,5 +1,6 @@
 import { Box, Text, HStack } from "@chakra-ui/react";
-import type { Announce } from "../hooks/useAnnounce";
+import type { Announce } from "../fakedata/useAnnouncef";
+// import type { Announce } from "../hooks/useAnnounce";
 
 interface Props {
   ann: Announce;

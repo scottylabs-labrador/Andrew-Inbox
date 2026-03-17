@@ -7,11 +7,12 @@ import {
   Spinner,
   VStack,
 } from "@chakra-ui/react";
-import { useTasks } from "../hooks/useTasks";
+// import { useTasks } from "../hooks/useTasks";
 import TaskCard from "./TaskCard";
 import { LuPlus } from "react-icons/lu";
 import TaskForm from "./TaskForm";
 import { useState } from "react";
+import { useTasksf } from "../fakedata/useTasksf";
 
 interface Props {
   filter: string;
@@ -25,7 +26,8 @@ const emptyMessages: Record<string, string> = {
 };
 
 export default function TasksPage({ filter }: Props) {
-  const { todos, loading, addAssignment, toggleAssignment } = useTasks();
+  // const { todos, loading, addAssignment, toggleAssignment } = useTasks();
+  const { todos, loading, addAssignment, toggleAssignment } = useTasksf();
   const [isOpen, setIsOpen] = useState(false);
 
   if (loading) {

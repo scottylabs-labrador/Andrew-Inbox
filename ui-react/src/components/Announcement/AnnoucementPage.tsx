@@ -1,8 +1,9 @@
 import { Box, Center, Dialog, HStack, Spinner, VStack } from "@chakra-ui/react";
-import { useAnnounce, type Announce } from "../hooks/useAnnounce";
+// import { useAnnounce, type Announce } from "../hooks/useAnnounce";
 import AnnouncementCard from "./AnnouncementCard";
 import AnnoucementOpen from "./AnnouncementOpen";
 import { useState } from "react";
+import { useAnnouncef, type Announce } from "../fakedata/useAnnouncef";
 
 interface Props {
   filter: string;
@@ -16,7 +17,8 @@ const emptyMessages: Record<string, string> = {
 };
 
 export default function AnnoucementPage({ filter }: Props) {
-  const { ann, loading, toggleAnnounce } = useAnnounce();
+  //const { ann, loading, toggleAnnounce } = useAnnounce();
+  const { ann, loading, toggleAnnounce } = useAnnouncef();
   const [selectedAnn, setSelectedAnn] = useState<Announce | null>(null);
 
   const handleToggle = (id: number) => {
