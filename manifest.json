@@ -3,7 +3,13 @@
   "name": "Andrew Inbox",
   "version": "1.0",
   "action": {
-    "default_popup": "ui-react/dist/index.html"
+    "default_popup": "ui-react/dist/index.html",
+    "default_icon": "hello_extensions.png"
+  },
+  "icons": {
+    "16": "hello_extensions.png",
+    "48": "hello_extensions.png",
+    "128": "hello_extensions.png"
   },
   "permissions": ["storage", "tabs"],
   "host_permissions": ["https://*.supabase.co/*"],
