@@ -1,83 +1,111 @@
-// import { useState, useEffect } from "react";
+import { supabase } from "@/supabaseClient";
+import { useState, useEffect } from "react";
 
-// export interface Task {
-//   id: number;
-//   assignment: string;
-//   course: string;
-//   due: Date;
-//   platform: string;
-//   checked: boolean;
-// }
+export interface Task {
+  id: number;
+  assignment: string;
+  course: string;
+  due: Date;
+  checked: boolean;
+}
 
-// interface NewTaskData {
-//   assignment: string;
-//   course: string;
-//   due: string;
-// }
+export const useTasks = () => {
+  const [todos, setTodos] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
 
-// export const useTasks = () => {
-//   const [todos, setTodos] = useState<Task[]>([]);
-//   const [loading, setLoading] = useState(true);
+  const fetchTasks = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("assignments")
+      .select("*")
+      .order("due_date", { ascending: true });
 
-//   useEffect(() => {
-//     // Just fetch the JSON directly
-//     fetch("/testing.json")
-//       .then((res) => {
-//         if (!res.ok) throw new Error("Could not find data");
-//         return res.json();
-//       })
-//       .then((data: any[]) => {
-//         const hydratedData = data.map((task) => ({
-//           ...task,
-//           due: new Date(task.due),
-//           checked: !!task.checked,
-//         }));
-//         setTodos(hydratedData);
-//         setLoading(false);
-//       })
-//       .catch((err) => {
-//         console.error("Fetch error:", err);
-//         setLoading(false);
-//       });
-//   }, []);
+    if (error) {
+      console.error("Fetch error:", error);
+    } else if (data) {
+      const hydratedData = data.map((row: any) => ({
+        id: row.id,
+        assignment: row.assignment_name,
+        course: row.course_name,
+        due: new Date(row.due_date),
+        checked: row.checked || false,
+      }));
+      setTodos(hydratedData);
+    }
+    setLoading(false);
+  };
 
-//   const addAssignment = (data: NewTaskData) => {
-//     const [year, month, day] = data.due.split("-").map(Number);
+  useEffect(() => {
+    fetchTasks();
+  }, []);
 
-//     const newTodo: Task = {
-//       id: Date.now(),
-//       assignment: data.assignment,
-//       course: data.course,
-//       due: new Date(year, month - 1, day),
-//       platform: "Manual",
-//       checked: false,
-//     };
+  const toggleAssignment = (id: number) => {
+    setTodos((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, checked: !t.checked } : t)),
+    );
+  };
 
-//     setTodos((prev) => [newTodo, ...prev]);
-//   };
+  const addAssignment = async (data: {
+    assignment: string;
+    course: string;
+    due: string;
+  }) => {
+    const { data: insertedData, error } = await supabase
+      .from("assignments")
+      .insert([
+        {
+          assignment_name: data.assignment,
+          course_name: data.course,
+          due_date: new Date(data.due).toISOString(),
+          retrieved_at: new Date().toISOString(),
+        },
+      ])
+      .select();
 
-//   const deleteAssignment = (id: number) => {
-//     setTodos((prev) => prev.filter((t) => t.id !== id));
-//   };
+    if (error) console.error("Add error:", error);
+    else if (insertedData) {
+      const newRow = insertedData[0];
+      const newTask: Task = {
+        id: newRow.id,
+        assignment: newRow.assignment_name,
+        course: newRow.course_name,
+        due: new Date(newRow.due_date),
+        checked: false,
+      };
+      setTodos((prev) => [newTask, ...prev]);
+    }
+  };
 
-//   const updateAssignment = (id: number, updatedFields: Partial<Task>) => {
-//     setTodos((prev) =>
-//       prev.map((t) => (t.id === id ? { ...t, ...updatedFields } : t)),
-//     );
-//   };
+  const deleteAssignment = async (id: number) => {
+    const { error } = await supabase.from("assignments").delete().eq("id", id);
+    if (!error) setTodos((prev) => prev.filter((t) => t.id !== id));
+  };
 
-//   const toggleAssignment = (id: number) => {
-//     setTodos((prev) =>
-//       prev.map((t) => (t.id === id ? { ...t, checked: !t.checked } : t)),
-//     );
-//   };
+  const updateAssignment = async (id: number, updatedFields: Partial<Task>) => {
+    const dbPayload: any = {};
+    if (updatedFields.assignment)
+      dbPayload.assignment_name = updatedFields.assignment;
+    if (updatedFields.course) dbPayload.course_name = updatedFields.course;
+    if (updatedFields.due) dbPayload.due_date = updatedFields.due.toISOString();
 
-//   return {
-//     todos,
-//     loading,
-//     addAssignment,
-//     deleteAssignment,
-//     updateAssignment,
-//     toggleAssignment,
-//   };
-// };
+    const { error } = await supabase
+      .from("assignments")
+      .update(dbPayload)
+      .eq("id", id);
+
+    if (!error) {
+      setTodos((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, ...updatedFields } : t)),
+      );
+    }
+  };
+
+  return {
+    todos,
+    loading,
+    addAssignment,
+    deleteAssignment,
+    toggleAssignment,
+    updateAssignment,
+  };
+};
