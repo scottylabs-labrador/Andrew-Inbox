@@ -1,8 +1,12 @@
 # REQUIRES CANVAS DATA SCRAPE TO BE RUN FIRST TO GET COURSES (change line 1 to match file name))
-from data_scrape import CANVAS_BASE_URL, HEADERS, get_paginated, print_header
+from data_scrape_for_piazza import CANVAS_BASE_URL, HEADERS, get_paginated, print_header
+from llm_summary import summarize
 import requests, time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import NoAlertPresentException
 
 # =========================
 # 4. PIAZZA LOGIN (IF APPLICABLE)
@@ -14,33 +18,93 @@ session = requests.Session()
 
 canvas_url = f"{CANVAS_BASE_URL}/api/v1/courses"
 
+def is_class_blocked(driver):
+    try:
+        span = driver.find_element(By.CSS_SELECTOR, "span[data-id='title_text']")
+        if "post access blocked" in span.text.lower():
+            print("Skipping class: detected title_text span (blocked)")
+            return True
+        return False
+    except:
+        return False
+
+all_posts = []
+
+def get_all_posts():
+    return all_posts
 
 def get_piazza_posts(driver):
-    
-    posts_data = []
+    if is_class_blocked(driver):
+        return []
 
-    posts = driver.find_elements(By.CSS_SELECTOR, "li.feed_item")
+    
+    posts_data = [];
+    post_links = []
+
     course_name = driver.find_element(By.CSS_SELECTOR, "#topbar_current_class_number").text
+    post_groups = driver.find_elements(By.CSS_SELECTOR, "div[data-id='post_group']")
 
-    for post in posts:
+    print(len(posts))
+
+    for group in post_groups:
         try:
-            title = post.find_element(By.CSS_SELECTOR, ".title_text").text
-            snippet = post.find_element(By.CSS_SELECTOR, ".snippet").text
+            week_span = group.find_element(By.CSS_SELECTOR, "span.d-flex.align-items-center")
+            week_text = week_span.text
 
-            id_wrapper = post.find_element(By.CSS_SELECTOR, ".feed-item-wrapper").get_attribute("id")
-            post_id = id_wrapper.replace("_wrapper", "")
-            base_url = driver.current_url.split("#")[0]
-            post_url = f"{base_url}/post/{post_id}"
+            if "last week" in week_text.lower():
+                print("Reached 'Last Week' group — stopping link collection.")
+                break
 
-            # post.click();
-            # WebDriverWait(driver, 10).until(lambda d: d.current_url != old_url)
-            # link = driver.current_url
-            # driver.back()
+            posts_in_group = group.find_elements(By.CSS_SELECTOR, "li.feed_item")
+            for post in posts_in_group:
+                try:
+                    id_wrapper = post.find_element(By.CSS_SELECTOR, ".feed-item-wrapper").get_attribute("id")
+                    post_id = id_wrapper.replace("_wrapper", "")
+                    base_url = driver.current_url.split("#")[0]
+                    post_url = f"{base_url}/post/{post_id}"
+                    post_links.append(post_url)
+                except Exception as e:
+                    print("Error looping through post in post groups")
+                    continue
+            
 
-            posts_data.append({"course":course_name,"title":title,"snippet":snippet,"post_url":post_url})
-        except:
+        except Exception as e:
+            print("Skipped post:", e)
             continue
-    
+
+    print("Collected links:", len(post_links))
+    for link in post_links:
+        driver.get(link)
+        time.sleep(2)  # small delay for page load
+        try:
+            content_div = driver.find_element(
+                By.CSS_SELECTOR, "div.render-html-content.overflow-hidden.latex_process"
+            )
+
+            title_div = driver.find_element(By.ID, "postViewSummaryId")
+            title = title_div.text
+
+            post_date = None
+            try:
+                time_elem = driver.find_element(By.CSS_SELECTOR, "time")
+                post_date = time_elem.get_attribute("datetime")
+            except:
+                post_date = None
+                print(f"Couldn't get post date!")
+
+            desc = summarize(title + " : " + content_div.text)
+
+            posts_data.append({
+                "course" : course_name,
+                "title" : title,
+                "text": desc,
+                "date": post_date,
+                "url": link
+            })
+        except:
+            print(f"Could not retrieve post at {link} — skipping.")
+            continue
+
     return posts_data
 
 def get_paginated_session(url):
@@ -121,9 +185,8 @@ for course in courses:
                     session.cookies.set(cookie['name'], cookie['value'])                
 
                 posts = get_piazza_posts(driver)
-
-                for p in posts:
-                    print(p)
+                all_posts.append(posts)
+                # print(posts)
 
                 driver.quit()
                 
@@ -134,7 +197,7 @@ for course in courses:
 # Parse a beautiful soup object return list of posts with descriptions etc
 
 
+
 print_header("DATA EXTRACTION COMPLETE")
 print("Piazza data successfully retrieved.")
-
 
