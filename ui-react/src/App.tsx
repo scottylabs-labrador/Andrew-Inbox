@@ -3,6 +3,7 @@ import { Box } from "@chakra-ui/react";
 import { useState } from "react";
 import LoginPage from "./components/LoginPage";
 import MainView from "./components/MainView";
+import Login from "./components/Login";
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -15,11 +16,7 @@ function App() {
       display="inline-block"
       position="relative"
     >
-      {loggedIn ? (
-        <MainView />
-      ) : (
-        <LoginPage onLogin={() => setLoggedIn(true)} />
-      )}
+      {loggedIn ? <MainView /> : <Login onLogin={() => setLoggedIn(true)} />}
     </Box>
   );
 }
