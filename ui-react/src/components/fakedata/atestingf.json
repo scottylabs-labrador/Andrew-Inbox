@@ -1,0 +1,34 @@
+[
+  {
+    "id": 1,
+    "title": "3/16 - Monday's class (1/26) will be online",
+    "course": "15-122",
+    "text": "Hi everyone ❄️ Due to the winter storm and campus updates, tomorrow's lecture will be held synchronously via Zoom. Please check the 'Zoom' tab on Canvas for the link. Stay safe and warm, and we look forward to seeing you online!",
+    "date": "3/16/26",
+    "isUnread": true
+  },
+  {
+    "id": 2,
+    "title": "3/7 - Midterm Room Assignments",
+    "course": "21-127",
+    "text": "The midterm room assignments have been posted to the 'Files' section. Please ensure you check your section number carefully as students will be split across DH 2210 and PH 100. Remember to bring your ID and a blue or black pen. No calculators are permitted for this exam.",
+    "date": "3/7/26",
+    "isUnread": true
+  },
+  {
+    "id": 3,
+    "title": "3/1 - Project 2 Clarification",
+    "course": "15-213",
+    "text": "We've received a few questions regarding the memory alignment requirements for the proxy lab. To clarify, your implementation must strictly adhere to the 8-byte alignment rule mentioned in the handout. We've updated the FAQ document to include a detailed example of how to handle this in your code.",
+    "date": "3/1/26",
+    "isUnread": false
+  },
+  {
+    "id": 4,
+    "title": "2/16 - Career Fair Preparation",
+    "course": "Career Services",
+    "text": "The Technical Career Fair is just around the corner! Make sure your resume is polished and uploaded to Handshake. We are hosting a resume review workshop this Thursday in the CUC. Come get 1-on-1 feedback from industry recruiters before the big event.",
+    "date": "2/16/26",
+    "isUnread": false
+  }
+]
