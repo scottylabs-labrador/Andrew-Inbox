@@ -50,7 +50,7 @@ export default function TasksPage({ filter }: Props) {
       task.due.getDate(),
     );
 
-    if (taskDate < today && !task.checked) {
+    if (taskDate < today && !task.status) {
       return true;
     }
 
@@ -75,8 +75,8 @@ export default function TasksPage({ filter }: Props) {
   });
 
   const sortedTasks = [...filteredTodos].sort((a, b) => {
-    if (a.checked !== b.checked) {
-      return a.checked ? 1 : -1;
+    if (a.status !== b.status) {
+      return a.status ? 1 : -1;
     }
 
     return a.due.getTime() - b.due.getTime();
