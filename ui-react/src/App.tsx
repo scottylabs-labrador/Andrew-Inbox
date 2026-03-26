@@ -9,7 +9,6 @@ function App() {
 
   return (
     <Box
-      borderRadius="2xl"
       overflow="hidden"
       boxShadow="0 8px 32px rgba(0,0,0,0.5)"
       display="inline-block"

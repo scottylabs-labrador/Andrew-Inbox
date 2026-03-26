@@ -20,7 +20,6 @@ export default function MainView() {
       bg="gray.800"
       w="360px"
       h="600px"
-      borderRadius="16x9"
       overflow="hidden"
       display="flex"
       flexDirection="column"

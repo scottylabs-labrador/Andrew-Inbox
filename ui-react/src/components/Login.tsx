@@ -42,7 +42,6 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
       bg="gray.800"
       w="360px"
       h="600px"
-      borderRadius="2xl"
       overflow="hidden"
       display="flex"
       flexDirection="column"
