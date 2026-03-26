@@ -2,7 +2,7 @@ import requests
 from datetime import datetime
 
 CANVAS_BASE_URL = "https://canvas.cmu.edu"   # <-- replace
-CANVAS_TOKEN = ""       # <-- (pretend api key works)
+CANVAS_TOKEN = "7"       # <-- (pretend api key works)
 
 HEADERS = {
     "Authorization": f"Bearer {CANVAS_TOKEN}"
