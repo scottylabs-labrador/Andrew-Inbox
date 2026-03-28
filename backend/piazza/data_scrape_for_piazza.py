@@ -1,12 +1,24 @@
 import requests
 from datetime import datetime
 
-CANVAS_BASE_URL = "https://canvas.cmu.edu"   # <-- replace
-CANVAS_TOKEN = ""       # <-- (pretend api key works)
 
-HEADERS = {
-    "Authorization": f"Bearer {CANVAS_TOKEN}"
-}
+CANVAS_BASE_URL = "https://canvas.cmu.edu"   # <-- replace
+
+
+def get_paginated(url, CANVAS_API_KEY):
+
+
+    HEADERS = {
+        "Authorization": f"Bearer {CANVAS_API_KEY}"
+    }
+    results = []
+    while url:
+        r = requests.get(url, headers=HEADERS)
+        r.raise_for_status()
+        results.extend(r.json())
+        url = r.links.get("next", {}).get("url")
+    return results
+
 
 # =========================
 # HELPER FUNCTIONS
@@ -22,14 +34,6 @@ def format_date(date_str):
         return "No due date"
     return datetime.fromisoformat(date_str.replace("Z", "+00:00")).strftime("%Y-%m-%d %H:%M")
 
-def get_paginated(url):
-    results = []
-    while url:
-        r = requests.get(url, headers=HEADERS)
-        r.raise_for_status()
-        results.extend(r.json())
-        url = r.links.get("next", {}).get("url")
-    return results
 
 # # =========================
 # # 1. GET COURSES

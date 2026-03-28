@@ -7,7 +7,6 @@ from selenium.webdriver.common.by import By
 session = requests.Session()
 canvas_url = f"{CANVAS_BASE_URL}/api/v1/courses"
 
-
 # =========================
 # HELPERS
 # =========================
@@ -110,7 +109,7 @@ def get_piazza_posts(driver):
 # MAIN FUNCTION (IMPORTANT)
 # =========================
 
-def get_all_posts():
+def get_all_posts(CANVAS_API_KEY):
     all_posts = []
 
     courses = get_paginated_session(canvas_url)
@@ -121,7 +120,7 @@ def get_all_posts():
 
         try:
             ext_tools = get_paginated(
-                f"{CANVAS_BASE_URL}/api/v1/courses/{course_id}/external_tools/visible_course_nav_tools"
+                f"{CANVAS_BASE_URL}/api/v1/courses/{course_id}/external_tools/visible_course_nav_tools", CANVAS_API_KEY
             )
         except requests.exceptions.HTTPError:
             continue
