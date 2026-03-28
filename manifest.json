@@ -4,16 +4,11 @@
   "version": "1.0",
   "action": {
     "default_popup": "ui-react/dist/index.html",
-    "default_icon": "hello_extensions.png"
-  },
-  "icons": {
-    "16": "hello_extensions.png",
-    "48": "hello_extensions.png",
-    "128": "hello_extensions.png"
+    "default_icon": "AndrewInboxLogo128.png"
   },
   "permissions": ["storage", "tabs"],
-  "host_permissions": ["https://*.supabase.co/*"],
+  "host_permissions": ["https://*.supabase.co/*", "http://127.0.0.1:8000/*"],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self';"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://*.supabase.co http://127.0.0.1:8000"
   }
 }

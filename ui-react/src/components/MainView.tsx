@@ -5,6 +5,7 @@ import TasksPage from "./Task/TasksPage";
 import AnnoucementPage from "./Announcement/AnnoucementPage";
 import todoicon from "../assets/todo.png";
 import annicon from "../assets/ann.png";
+import Btn from "./Btn";
 
 export default function MainView() {
   const [activeTab, setActiveTab] = useState<"todo" | "announcements">("todo");
@@ -100,6 +101,8 @@ export default function MainView() {
               </HStack>
             </Box>
           </HStack>
+
+          <Btn />
         </HStack>
       </Box>
 
