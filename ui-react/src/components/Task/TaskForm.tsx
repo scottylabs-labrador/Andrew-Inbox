@@ -2,6 +2,7 @@ import { Box, Button, Dialog, HStack, Input, VStack } from "@chakra-ui/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { Creds } from "@/App";
 
 const schema = z.object({
   assignment: z

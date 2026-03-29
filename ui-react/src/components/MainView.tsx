@@ -6,8 +6,13 @@ import AnnoucementPage from "./Announcement/AnnoucementPage";
 import todoicon from "../assets/todo.png";
 import annicon from "../assets/ann.png";
 import Btn from "./Btn";
+import type { Creds } from "@/App";
 
-export default function MainView() {
+interface Props {
+  c: Creds | null;
+}
+
+export default function MainView({ c }: Props) {
   const [activeTab, setActiveTab] = useState<"todo" | "announcements">("todo");
   const [timeFilter, setTimeFilter] = useState("All");
 
@@ -120,7 +125,7 @@ export default function MainView() {
       {/* Content */}
       <Box flex={1} overflowY="auto" px={3} py={3} bg="gray.800">
         {activeTab === "todo" ? (
-          <TasksPage filter={timeFilter} />
+          <TasksPage filter={timeFilter} c={c} />
         ) : (
           <AnnoucementPage filter={timeFilter} />
         )}
