@@ -1,49 +1,62 @@
-// import { useState, useEffect } from "react";
+import { supabase } from "@/supabaseClient";
+import { useState, useEffect } from "react";
 
-// export interface Announce {
-//   id: number;
-//   title: string;
-//   course: string;
-//   text: string;
-//   date: Date;
-//   isUnread: boolean;
-// }
+export interface Announce {
+  announcement_id: number;
+  user_id: string;
+  course: string;
+  title: string;
+  description: string;
+  link: string;
+  date: string;
+  platform: string;
+  is_read: boolean;
+}
 
-// export const useAnnounce = () => {
-//   const [ann, setAnn] = useState<Announce[]>([]);
-//   const [loading, setLoading] = useState(true);
+export const useAnnounce = () => {
+  const [ann, setAnn] = useState<Announce[]>([]);
+  const [loading, setLoading] = useState(true);
 
-//   useEffect(() => {
-//     // Just fetch the JSON directly
-//     fetch("/atesting.json")
-//       .then((res) => {
-//         if (!res.ok) throw new Error("Could not find data");
-//         return res.json();
-//       })
-//       .then((data: any[]) => {
-//         const hydrated = data.map((item) => ({
-//           ...item,
-//           date: new Date(item.date),
-//           isUnread: item.isUnread ?? true,
-//         }));
-//         setAnn(hydrated);
-//         setLoading(false);
-//       })
-//       .catch((err) => {
-//         console.error("Fetch error:", err);
-//         setLoading(false);
-//       });
-//   }, []);
+  const fetchAnnouncements = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("announcements")
+      .select("*")
+      .order("date", { ascending: false });
 
-//   const toggleAnnounce = (id: number) => {
-//     setAnn((prev) =>
-//       prev.map((t) => (t.id === id ? { ...t, isUnread: !t.isUnread } : t)),
-//     );
-//   };
+    if (error) {
+      console.error("Error fetching announcements:", error.message);
+    } else {
+      setAnn(data || []);
+    }
+    setLoading(false);
+  };
 
-//   return {
-//     ann,
-//     loading,
-//     toggleAnnounce,
-//   };
-// };
+  useEffect(() => {
+    fetchAnnouncements();
+  }, []);
+
+  const toggleAnnounce = async (id: number, currentStatus: boolean) => {
+    setAnn((prev) =>
+      prev.map((t) =>
+        t.announcement_id === id ? { ...t, is_read: !currentStatus } : t,
+      ),
+    );
+
+    const { error } = await supabase
+      .from("announcements")
+      .update({ is_read: !currentStatus })
+      .eq("announcement_id", id);
+
+    if (error) {
+      console.error("Error updating announcement:", error.message);
+      fetchAnnouncements();
+    }
+  };
+
+  return {
+    ann,
+    loading,
+    toggleAnnounce,
+  };
+};
