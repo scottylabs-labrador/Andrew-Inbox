@@ -28,6 +28,24 @@ export default function TasksPage({ filter }: Props) {
   const { todos, loading, addAssignment, toggleAssignment } = useTasks();
   const [isOpen, setIsOpen] = useState(false);
 
+  const getSemesterRange = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+
+    if (now >= new Date(year, 7, 25) && now <= new Date(year, 11, 20)) {
+      return { start: new Date(year, 7, 25), end: new Date(year, 11, 20) };
+    }
+    if (now >= new Date(year, 11, 21) || now <= new Date(year, 4, 7)) {
+      const startYear = now.getMonth() === 11 ? year : year - 1;
+      const endYear = now.getMonth() === 11 ? year + 1 : year;
+      return {
+        start: new Date(startYear, 11, 21),
+        end: new Date(endYear, 4, 7),
+      };
+    }
+    return { start: new Date(year, 4, 8), end: new Date(year, 7, 24) };
+  };
+
   if (loading) {
     return (
       <Center h="200px">
@@ -39,15 +57,21 @@ export default function TasksPage({ filter }: Props) {
     );
   }
 
+  const { start, end } = getSemesterRange();
+
   const filteredTodos = todos.filter((task) => {
+    const rawTaskDate = new Date(task.due);
+
+    if (rawTaskDate < start || rawTaskDate > end) return false;
+
     if (filter === "All") return true;
 
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const taskDate = new Date(
-      task.due.getFullYear(),
-      task.due.getMonth(),
-      task.due.getDate(),
+      rawTaskDate.getFullYear(),
+      rawTaskDate.getMonth(),
+      rawTaskDate.getDate(),
     );
 
     if (taskDate < today && !task.status) {
@@ -78,8 +102,7 @@ export default function TasksPage({ filter }: Props) {
     if (a.status !== b.status) {
       return a.status ? 1 : -1;
     }
-
-    return a.due.getTime() - b.due.getTime();
+    return new Date(a.due).getTime() - new Date(b.due).getTime();
   });
 
   return (
@@ -101,12 +124,7 @@ export default function TasksPage({ filter }: Props) {
             ))
           ) : (
             <Center py={10} flexDirection="column">
-              <p
-                style={{
-                  color: "gray",
-                  textAlign: "center",
-                }}
-              >
+              <p style={{ color: "gray", textAlign: "center" }}>
                 {emptyMessages[filter] || emptyMessages.All}
               </p>
             </Center>
