@@ -67,6 +67,8 @@ export default function TasksPage({ filter, c }: Props) {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   const filteredTodos = todos.filter((task) => {
+    if (task.userId !== c?.username) return false;
+
     const rawTaskDate = new Date(task.due);
     if (rawTaskDate < start || rawTaskDate > end) return false;
     if (filter === "All") return true;

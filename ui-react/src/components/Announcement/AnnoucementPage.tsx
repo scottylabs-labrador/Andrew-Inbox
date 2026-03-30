@@ -3,9 +3,11 @@ import { useAnnounce, type Announce } from "../hooks/useAnnounce";
 import AnnouncementCard from "./AnnouncementCard";
 import AnnoucementOpen from "./AnnouncementOpen";
 import { useState } from "react";
+import type { Creds } from "@/App";
 
 interface Props {
   filter: string;
+  c: Creds | null;
 }
 
 const emptyMessages: Record<string, string> = {
@@ -15,7 +17,7 @@ const emptyMessages: Record<string, string> = {
   Month: "Nothing this month!",
 };
 
-export default function AnnoucementPage({ filter }: Props) {
+export default function AnnoucementPage({ filter, c }: Props) {
   const { ann, loading, toggleAnnounce } = useAnnounce();
   const [selectedAnn, setSelectedAnn] = useState<Announce | null>(null);
 
@@ -36,6 +38,7 @@ export default function AnnoucementPage({ filter }: Props) {
   }
 
   const filteredAnn = ann.filter((a) => {
+    if (a.user_id !== c?.username) return false;
     if (filter === "All") return true;
 
     const now = new Date();

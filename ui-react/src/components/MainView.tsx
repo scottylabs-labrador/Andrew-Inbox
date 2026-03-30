@@ -127,7 +127,7 @@ export default function MainView({ c }: Props) {
         {activeTab === "todo" ? (
           <TasksPage filter={timeFilter} c={c} />
         ) : (
-          <AnnoucementPage filter={timeFilter} />
+          <AnnoucementPage filter={timeFilter} c={c} />
         )}
       </Box>
     </Box>

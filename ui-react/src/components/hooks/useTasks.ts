@@ -9,16 +9,15 @@ export interface Task {
   status: boolean;
   points: number | null;
   platform: string | null;
+  userId: string;
 }
 
 export const useTasks = () => {
   const [todos, setTodos] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // FIXED: Added a check to ensure dateStr exists before splitting
   const parseLocalDatePicker = (dateStr: string | null | undefined) => {
-    if (!dateStr) return new Date(); // Fallback to today if date is missing
-
+    if (!dateStr) return new Date();
     const dateOnly = dateStr.split("T")[0];
     return new Date(dateOnly.replace(/-/g, "/"));
   };
@@ -41,6 +40,7 @@ export const useTasks = () => {
         status: row.status || false,
         points: row.points_possible,
         platform: row.platform,
+        userId: row.user_id, // Mapping the database column
       }));
       setTodos(hydratedData);
     }
@@ -64,7 +64,6 @@ export const useTasks = () => {
     const maxId = todos.reduce((max, t) => (t.id > max ? t.id : max), 0);
     const nextId = maxId + 1;
 
-    // Use local-friendly date for the DB insert
     const localDate = new Date(data.due.replace(/-/g, "/"));
     const isoDate = localDate.toISOString();
 
@@ -97,6 +96,7 @@ export const useTasks = () => {
         status: newRow.status,
         points: newRow.points_possible,
         platform: newRow.platform,
+        userId: newRow.user_id, // Ensure new task state has the ID
       };
       setTodos((prev) => [newTask, ...prev]);
     }
