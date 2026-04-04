@@ -2,7 +2,7 @@ import { supabase } from "@/supabaseClient";
 import { useState, useEffect } from "react";
 
 export interface Announce {
-  announcement_id: number;
+  announcement_id: string;
   user_id: string;
   course: string;
   title: string;
@@ -36,7 +36,7 @@ export const useAnnounce = () => {
     fetchAnnouncements();
   }, []);
 
-  const toggleAnnounce = async (id: number, currentStatus: boolean) => {
+  const toggleAnnounce = async (id: string, currentStatus: boolean) => {
     setAnn((prev) =>
       prev.map((t) =>
         t.announcement_id === id ? { ...t, is_read: !currentStatus } : t,

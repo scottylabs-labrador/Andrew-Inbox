@@ -21,7 +21,7 @@ export default function AnnoucementPage({ filter, c }: Props) {
   const { ann, loading, toggleAnnounce } = useAnnounce();
   const [selectedAnn, setSelectedAnn] = useState<Announce | null>(null);
 
-  const handleToggle = (id: number, currentStatus: boolean) => {
+  const handleToggle = (id: string, currentStatus: boolean) => {
     toggleAnnounce(id, currentStatus);
     setSelectedAnn(null);
   };
