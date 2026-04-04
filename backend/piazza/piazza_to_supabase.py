@@ -1,4 +1,4 @@
-from piazza import get_all_posts
+from .piazza import get_all_posts
 
 # IMPORTS
 # ===============================
@@ -12,8 +12,8 @@ from dotenv import load_dotenv
 # ===============================
 # SUPABASE CONFIG
 # ===============================
-SUPABASE_URL = os.getenv(SUPABASE_URL)
-SUPABASE_KEY = os.getenv(SUPABASE_KEY)
+SUPABASE_URL = os.getenv('SUPABASE_URL')
+SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 
 def send_piazza_to_supabase(user_id, CANVAS_API_KEY):
     supabase: Client = create_client(supabase_url, supabase_key)

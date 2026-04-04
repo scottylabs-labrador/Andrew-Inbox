@@ -1,5 +1,5 @@
-from data_scrape_for_piazza import CANVAS_BASE_URL, HEADERS, get_paginated, print_header
-from llm_summary import summarize
+from .data_scrape_for_piazza import CANVAS_BASE_URL, get_paginated, print_header
+from .llm_summary import summarize
 import requests, time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -111,7 +111,9 @@ def get_piazza_posts(driver):
 
 def get_all_posts(CANVAS_API_KEY):
     all_posts = []
-
+    HEADERS = {
+        "Authorization": f"Bearer {CANVAS_API_KEY}"
+    }
     courses = get_paginated_session(canvas_url)
 
     for course in courses:

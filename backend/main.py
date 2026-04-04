@@ -4,10 +4,11 @@
 # 2. retrieve canvas token from user id and verify its a valid user_id
 # 3. call scrape piazza, gradescope and canvas with canvas token
 # 4. upload all of them to supabase
-# 5. Call function to update UI
 
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from pydantic import BaseModel
+from canvas import send_canvas_to_supabase
+from piazza.piazza_to_supabase import send_piazza_to_supabase
 
 app = FastAPI()
 
@@ -24,7 +25,7 @@ def get_entry_by_pk(table_name: str, pk_column: str, pk_value: any):
 
 def sync_supabase(user_id):
     CANVAS_API_KEY = get_entry_by_pk("user", "user_id", user_id)
-    if not canvas_api_key:
+    if not CANVAS_API_KEY:
         print(f"Error: No API key found for {user_id}")
         return
     send_piazza_to_supabase(user_id, CANVAS_API_KEY)

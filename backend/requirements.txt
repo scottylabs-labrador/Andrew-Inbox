@@ -1,0 +1,5 @@
+supabase
+requests
+dotenv
+openai
+selenium
