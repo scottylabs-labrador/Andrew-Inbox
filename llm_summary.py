@@ -19,7 +19,7 @@ def summarize(description):
         messages = [
             {
                 "role": "user",
-                "content": "Summarize this message. Include all important details for a student in this class. Here is the message: " + description
+                "content": "Summarize this message aiming for conciseness. Include all important details for a student in this class. No need to explain all the details. The student has the link if they want to see the full post anyway. Do not use LaTex in your summary. Here is the message title and description: " + description
             }
         ]
     )
