@@ -135,48 +135,49 @@ def write_assignments_to_database(gradescope_data):
         except Exception as e:
             print("Supabase insert exception:", e)
 
-courses = get_paginated_session(canvas_url);
-active_courses = get_active_classes(courses)
-
 # with open('gradescope_data.csv', 'w', newline='') as csvfile:
-for course in active_courses:
-    course_id = course["id"]
-    course_name = course.get("name", "Unnamed Course")
+def send_gradescope_to_supabase():
+    courses = get_paginated_session(canvas_url);
+    active_courses = get_active_classes(courses)
+    
+    for course in active_courses:
+        course_id = course["id"]
+        course_name = course.get("name", "Unnamed Course")
 
-    ext_tools = get_class_ext_tools(course_id)
-    if not ext_tools:
-        continue
+        ext_tools = get_class_ext_tools(course_id)
+        if not ext_tools:
+            continue
 
-    for tool in ext_tools:
-        if "Gradescope LTI 1.3" in tool.get("name", ""):
-            print(f"\n{course_name}")
-            print("-" * len(course_name))
-            print("Gradescope integration detected. Attempting login...")
+        for tool in ext_tools:
+            if "Gradescope LTI 1.3" in tool.get("name", ""):
+                print(f"\n{course_name}")
+                print("-" * len(course_name))
+                print("Gradescope integration detected. Attempting login...")
 
-            # Access launch URL for Gradescope
-            gscope_url = get_gscope_url(course_id, tool)
-            if not gscope_url:
-                continue
+                # Access launch URL for Gradescope
+                gscope_url = get_gscope_url(course_id, tool)
+                if not gscope_url:
+                    continue
 
-            # Launch Gradescope URL to access grades/assignments
-            r1 = session.get(gscope_url, headers=HEADERS)
-            if r1.status_code == 200:
-                # Handle redirects and extract final URL after login
-                driver = webdriver.Chrome()  # Ensure chromedriver is in PATH
-            
-                response, driver = gscope_login(gscope_url, driver)
-                soup = BeautifulSoup(response.text, 'html.parser')
-                gradescope_data = gscope_helpers.get_assignments_student_view(soup)
-                # print(gradescope_data)
-
-                if gradescope_data != []:
-                    # write_assignments_to_csv(gradescope_data)
-                    write_assignments_to_database(gradescope_data)
-                driver.quit()
+                # Launch Gradescope URL to access grades/assignments
+                r1 = session.get(gscope_url, headers=HEADERS)
+                if r1.status_code == 200:
+                    # Handle redirects and extract final URL after login
+                    driver = webdriver.Chrome()  # Ensure chromedriver is in PATH
                 
-                
-            else:
-                print("Failed to access Gradescope URL.")
+                    response, driver = gscope_login(gscope_url, driver)
+                    soup = BeautifulSoup(response.text, 'html.parser')
+                    gradescope_data = gscope_helpers.get_assignments_student_view(soup)
+                    # print(gradescope_data)
+
+                    if gradescope_data != []:
+                        # write_assignments_to_csv(gradescope_data)
+                        write_assignments_to_database(gradescope_data)
+                    driver.quit()
+                    
+                    
+                else:
+                    print("Failed to access Gradescope URL.")
 
 print_header("DATA EXTRACTION COMPLETE")
 print("Gradescope data successfully retrieved.")
