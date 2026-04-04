@@ -1,9 +1,5 @@
 import { useState } from "react";
 
-interface AuthPayload {
-  user_id: string;
-}
-
 export const useBackend = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -12,15 +8,13 @@ export const useBackend = () => {
     setLoading(true);
     setError(null);
 
-    const payload: AuthPayload = { user_id: userId };
-
     try {
-      const response = await fetch("http://127.0.0.1:8000/sync-script", {
+      const response = await fetch("http://127.0.0.1:8000/sync", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ user_id: userId }),
       });
 
       if (!response.ok) {
@@ -30,10 +24,8 @@ export const useBackend = () => {
 
       return await response.json();
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Unknown error occurred";
+      const message = err instanceof Error ? err.message : "Unknown error";
       setError(message);
-      console.error("Backend Sync Error:", message);
       return null;
     } finally {
       setLoading(false);

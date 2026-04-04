@@ -1,14 +1,18 @@
 import { Box, Button } from "@chakra-ui/react";
 import { useBackend } from "./hooks/useBackend";
 
-export default function Btn() {
+interface Props {
+  username: string | undefined;
+}
+
+export default function Btn({ username }: Props) {
   const { executeSync, loading } = useBackend();
 
   const handleAction = async () => {
-    const result = await executeSync("andrew_01");
+    const result = await executeSync(username ? username : "");
 
     if (result) {
-      console.log(result);
+      console.log(result.message);
     }
   };
 

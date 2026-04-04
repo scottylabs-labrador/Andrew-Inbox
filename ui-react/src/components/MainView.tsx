@@ -107,7 +107,7 @@ export default function MainView({ c }: Props) {
             </Box>
           </HStack>
 
-          <Btn />
+          <Btn username={c?.username} />
         </HStack>
       </Box>
 
