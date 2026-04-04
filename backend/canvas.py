@@ -4,13 +4,16 @@ from datetime import datetime
 from supabase import create_client, Client
 
 
+import sys
+from pathlib import Path
+
+from supabase import create_client, Client
+
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+from config import supabase
+
 def send_canvas_to_supabase(user_id, CANVAS_TOKEN):
-   # SUPABASE CONFIG
-   SUPABASE_URL = os.getenv(SUPABASE_URL)
-   SUPABASE_KEY = os.getenv(SUPABASE_KEY)
-
-
-   supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+   
 
 
    # CANVAS CONFIG
@@ -81,6 +84,6 @@ def send_canvas_to_supabase(user_id, CANVAS_TOKEN):
 
            # Insert into Supabase
            try:
-               response = supabase.table("assignments_duplicate").upsert(assignment_record, on_conflict=id).execute()
+               response = supabase.table("assignments_duplicate").upsert(assignment_record, on_conflict="id").execute()
            except Exception as e:
                print("Supabase insert exception:", e)

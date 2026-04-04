@@ -19,7 +19,7 @@ def is_class_blocked(driver):
         return False
 
 
-def get_paginated_session(url):
+def get_paginated_session(url, HEADERS):
     time.sleep(1)
     results = []
     while url:
@@ -114,7 +114,7 @@ def get_all_posts(CANVAS_API_KEY):
     HEADERS = {
         "Authorization": f"Bearer {CANVAS_API_KEY}"
     }
-    courses = get_paginated_session(canvas_url)
+    courses = get_paginated_session(canvas_url, HEADERS)
 
     for course in courses:
         course_id = course["id"]

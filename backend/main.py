@@ -9,22 +9,46 @@ from fastapi import FastAPI, BackgroundTasks, HTTPException
 from pydantic import BaseModel
 from canvas import send_canvas_to_supabase
 from piazza.piazza_to_supabase import send_piazza_to_supabase
+import os   
+from dotenv import load_dotenv
+
+import sys
+from pathlib import Path
+
+from supabase import create_client, Client
+
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+from config import supabase
 
 app = FastAPI()
 
-def get_entry_by_pk(table_name: str, pk_column: str, pk_value: any):
+def get_entry_by_pk(user_id: any):
     try:
-        response = supabase.table(table_name).select("*").eq(pk_column, pk_value).execute()
+        response = (
+            supabase.from_("user")      # replace "users" with your actual table name
+            .select("canvas_token")    # only select the column we need
+            .eq("user_id", user_id)      # filter by user_id
+            .execute()
+        )
+
+        # if response.error:
+        #     print(f"Supabase error: {response.error}")
+        #     return None
+
         if response.data:
-            return response.data[0]['canvas_token']
+            # Use .get() in case 'canvas_api_key' doesn't exist
+            return response.data[0].get("canvas_token")
         else:
+            print("No user found with that user_id")
             return None
+
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"An exception occurred: {e}")
         return None
 
+
 def sync_supabase(user_id):
-    CANVAS_API_KEY = get_entry_by_pk("user", "user_id", user_id)
+    CANVAS_API_KEY = get_entry_by_pk(user_id)
     if not CANVAS_API_KEY:
         print(f"Error: No API key found for {user_id}")
         return
