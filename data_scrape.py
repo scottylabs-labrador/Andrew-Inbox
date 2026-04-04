@@ -1,8 +1,12 @@
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 CANVAS_BASE_URL = "https://canvas.cmu.edu"   # <-- replace
-CANVAS_TOKEN = ""       # <-- (pretend api key works)
+CANVAS_TOKEN = os.getenv("CANVAS_TOKEN")      # <-- (pretend api key works)
 
 HEADERS = {
     "Authorization": f"Bearer {CANVAS_TOKEN}"
@@ -31,11 +35,33 @@ def get_paginated(url):
         url = r.links.get("next", {}).get("url")
     return results
 
+def get_active_classes(courses):
+    # Get current time in UTC to match Canvas format
+    curr_date = datetime.now(timezone.utc)
+    active_courses = []
+    for course in courses:
+        term = course.get('term')
+        if not term:
+            continue
+            
+        end_at_str = term.get('end_at')       
+        if end_at_str is None:
+            active_courses.append(course)
+            continue
+        
+        # Convert Canvas string to datetime object
+        # Canvas uses 'Z' for UTC; replace with '+00:00' for older Python versions if needed
+        end_at = datetime.fromisoformat(end_at_str.replace('Z', '+00:00'))        
+        if end_at > curr_date:
+            active_courses.append(course)
+    return active_courses
+
 # =========================
 # 1. GET COURSES
 # =========================
 
-courses = get_paginated(f"{CANVAS_BASE_URL}/api/v1/courses")
+courses = get_paginated(f"{CANVAS_BASE_URL}/api/v1/courses?include[]=term")
+courses = get_active_classes(courses)
 
 print_header("COURSES")
 

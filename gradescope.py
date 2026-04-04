@@ -1,11 +1,23 @@
 # REQUIRES CANVAS DATA SCRAPE TO BE RUN FIRST TO GET COURSES (change line 1 to match file name))
-from data_scrape import CANVAS_BASE_URL, HEADERS, get_paginated, print_header
+from data_scrape import CANVAS_BASE_URL, HEADERS, get_paginated, print_header, get_active_classes
 import requests, csv
 from time import sleep
 from  datetime import datetime, timezone
 from bs4 import BeautifulSoup
 from selenium import webdriver
 import gradescopeapi.classes._helpers._assignment_helpers as gscope_helpers
+from supabase import create_client, Client
+import os
+from dotenv import load_dotenv
+# ===============================
+# SUPABASE CONFIG
+# ===============================
+
+load_dotenv()
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # =========================
 # 4. GRADESCOPE LOGIN (IF APPLICABLE)
@@ -25,27 +37,6 @@ def get_paginated_session(url):
         results.extend(r.json())
         url = r.links.get("next", {}).get("url")
     return results
-
-def get_active_classes(courses):
-    # Get current time in UTC to match Canvas format
-    curr_date = datetime.now(timezone.utc)
-    active_courses = []
-    for course in courses:
-        term = course.get('term')
-        if not term:
-            continue
-            
-        end_at_str = term.get('end_at')       
-        if end_at_str is None:
-            active_courses.append(course)
-            continue
-        
-        # Convert Canvas string to datetime object
-        # Canvas uses 'Z' for UTC; replace with '+00:00' for older Python versions if needed
-        end_at = datetime.fromisoformat(end_at_str.replace('Z', '+00:00'))        
-        if end_at > curr_date:
-            active_courses.append(course)
-    return active_courses
 
 def get_class_ext_tools(course_id):
     # Access course external tools
@@ -112,52 +103,80 @@ def write_assignments_to_csv(gradescope_data):
     for a in assignment_dict:
         a["course_name"] = course_name
         a["course_code"] = course.get("course_code", "---")
+        a["course_id"] = course_id
     fields = assignment_dict[0].keys()
     writer = csv.DictWriter(csvfile, fieldnames=fields)
     write_csv_headers(csvfile, writer)
     writer.writerows(assignment_dict)
 
+def write_assignments_to_database(gradescope_data):
+    assignment_dict = [dict((vars(Assignment).items())) for Assignment in gradescope_data]
+    for a in assignment_dict:
+        a["course_name"] = course_name
+        a["course_code"] = course.get("course_code", "---")
+        a["course_id"] = course_id
+        assignment_record = {
+            "course_name": a["course_name"],
+            "assignment_id": a["assignment_id"],
+            "assignment_name": a["name"],
+            "due_date": a["due_date"].isoformat() if a["due_date"] else None,
+            "points_possible": a.get("max_grade"),
+            "retrieved_at": datetime.now(timezone.utc).isoformat(),
+            # "status": a["submissions_status"],
+            "platform": "Gradescope"
+        }
+    # Insert into Supabase
+        try:
+            response = supabase.table("assignments").upsert(assignment_record,
+                                                            on_conflict="assignment_id",
+                                                            ignore_duplicates=True).execute()
+            if not response.data:
+                print("Supabase insert failed:", response)
+        except Exception as e:
+            print("Supabase insert exception:", e)
+
 courses = get_paginated_session(canvas_url);
 active_courses = get_active_classes(courses)
 
-with open('gradescope_data.csv', 'w', newline='') as csvfile:
-    for course in active_courses:
-        course_id = course["id"]
-        course_name = course.get("name", "Unnamed Course")
+# with open('gradescope_data.csv', 'w', newline='') as csvfile:
+for course in active_courses:
+    course_id = course["id"]
+    course_name = course.get("name", "Unnamed Course")
 
-        ext_tools = get_class_ext_tools(course_id)
-        if not ext_tools:
-            continue
+    ext_tools = get_class_ext_tools(course_id)
+    if not ext_tools:
+        continue
 
-        for tool in ext_tools:
-            if "Gradescope LTI 1.3" in tool.get("name", ""):
-                print(f"\n{course_name}")
-                print("-" * len(course_name))
-                print("Gradescope integration detected. Attempting login...")
+    for tool in ext_tools:
+        if "Gradescope LTI 1.3" in tool.get("name", ""):
+            print(f"\n{course_name}")
+            print("-" * len(course_name))
+            print("Gradescope integration detected. Attempting login...")
 
-                # Access launch URL for Gradescope
-                gscope_url = get_gscope_url(course_id, tool)
-                if not gscope_url:
-                    continue
+            # Access launch URL for Gradescope
+            gscope_url = get_gscope_url(course_id, tool)
+            if not gscope_url:
+                continue
 
-                # Launch Gradescope URL to access grades/assignments
-                r1 = session.get(gscope_url, headers=HEADERS)
-                if r1.status_code == 200:
-                    # Handle redirects and extract final URL after login
-                    driver = webdriver.Chrome()  # Ensure chromedriver is in PATH
-              
-                    response, driver = gscope_login(gscope_url, driver)
-                    soup = BeautifulSoup(response.text, 'html.parser')
-                    gradescope_data = gscope_helpers.get_assignments_student_view(soup)
-                    # print(gradescope_data)
+            # Launch Gradescope URL to access grades/assignments
+            r1 = session.get(gscope_url, headers=HEADERS)
+            if r1.status_code == 200:
+                # Handle redirects and extract final URL after login
+                driver = webdriver.Chrome()  # Ensure chromedriver is in PATH
+            
+                response, driver = gscope_login(gscope_url, driver)
+                soup = BeautifulSoup(response.text, 'html.parser')
+                gradescope_data = gscope_helpers.get_assignments_student_view(soup)
+                # print(gradescope_data)
 
-                    if gradescope_data != []:
-                        write_assignments_to_csv(gradescope_data)
-                    driver.quit()
-                    
-                    
-                else:
-                    print("Failed to access Gradescope URL.")
+                if gradescope_data != []:
+                    # write_assignments_to_csv(gradescope_data)
+                    write_assignments_to_database(gradescope_data)
+                driver.quit()
+                
+                
+            else:
+                print("Failed to access Gradescope URL.")
 
 print_header("DATA EXTRACTION COMPLETE")
 print("Gradescope data successfully retrieved.")
