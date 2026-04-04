@@ -2,40 +2,43 @@ import { useState } from "react";
 
 interface AuthPayload {
   user_id: string;
-  password_key: string;
 }
 
 export const useBackend = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const executeScript = async (credentials: AuthPayload) => {
+  const executeSync = async (userId: string) => {
     setLoading(true);
     setError(null);
 
+    const payload: AuthPayload = { user_id: userId };
+
     try {
-      const response = await fetch("http://127.0.0.1:8000/execute-script", {
+      const response = await fetch("http://127.0.0.1:8000/sync-script", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || `Server error: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || `Sync failed: ${response.status}`);
       }
 
       return await response.json();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Unknown error";
+      const message =
+        err instanceof Error ? err.message : "Unknown error occurred";
       setError(message);
-      console.error("Backend Error:", message);
+      console.error("Backend Sync Error:", message);
+      return null;
     } finally {
       setLoading(false);
     }
   };
 
-  return { executeScript, loading, error };
+  return { executeSync, loading, error };
 };

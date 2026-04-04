@@ -2,16 +2,13 @@ import { Box, Button } from "@chakra-ui/react";
 import { useBackend } from "./hooks/useBackend";
 
 export default function Btn() {
-  const { executeScript, loading } = useBackend();
+  const { executeSync, loading } = useBackend();
 
   const handleAction = async () => {
-    const result = await executeScript({
-      user_id: "andrew_01",
-      password_key: "my-secure-password",
-    });
+    const result = await executeSync("andrew_01");
 
     if (result) {
-      console.log(result.message);
+      console.log(result);
     }
   };
 
