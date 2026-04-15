@@ -33,12 +33,13 @@ def send_piazza_to_supabase(user_id, CANVAS_API_KEY):
             "link": post["url"],
             "date": datetime.fromisoformat(post["date"]).astimezone(timezone.utc).isoformat(),
             "platform": "piazza",
+            "announcement_id": f"{user_id} piazza {post["url"]}",
             "is_read": False        
         }
         try:
             response = supabase.table("announcements").upsert(
                 announcement,
-                on_conflict="id"
+                on_conflict="announcement_id"
             ).execute()    
         except Exception as e:
             print("Supabase insert exception:", e)
