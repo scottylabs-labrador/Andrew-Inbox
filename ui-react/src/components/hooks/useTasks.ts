@@ -2,7 +2,7 @@ import { supabase } from "@/supabaseClient";
 import { useState, useEffect } from "react";
 
 export interface Task {
-  id: number;
+  id: string;
   assignment: string;
   course: string;
   due: Date;
@@ -12,7 +12,8 @@ export interface Task {
   userId: string;
 }
 
-export const useTasks = () => {
+// Pass the current user's username/ID to the hook
+export const useTasks = (currentUsername?: string) => {
   const [todos, setTodos] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,33 +24,41 @@ export const useTasks = () => {
   };
 
   const fetchTasks = async () => {
+    if (!currentUsername) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     const { data, error } = await supabase
       .from("assignments_duplicate")
       .select("*")
-      .order("due_date", { ascending: true });
+      .eq("user_id", currentUsername)
+      .order("due_date", { ascending: true })
+      .limit(2000);
 
     if (error) {
       console.error("Fetch error:", error);
     } else if (data) {
       const hydratedData = data.map((row: any) => ({
-        id: row.assignment_id,
+        id: row.assignment_id || `temp-${Math.random()}`,
         assignment: row.assignment_name,
         course: row.course_name,
         due: parseLocalDatePicker(row.due_date),
         status: row.status || false,
         points: row.points_possible,
         platform: row.platform,
-        userId: row.user_id, // Mapping the database column
+        userId: row.user_id,
       }));
       setTodos(hydratedData);
     }
     setLoading(false);
   };
 
+  // Re-fetch whenever the user logs in or changes
   useEffect(() => {
     fetchTasks();
-  }, []);
+  }, [currentUsername]);
 
   const addAssignment = async (
     data: {
@@ -61,8 +70,9 @@ export const useTasks = () => {
     },
     userId: string,
   ) => {
-    const maxId = todos.reduce((max, t) => (t.id > max ? t.id : max), 0);
-    const nextId = maxId + 1;
+    const nextId = crypto.randomUUID
+      ? crypto.randomUUID()
+      : (Date.now() + Math.random()).toString();
 
     const localDate = new Date(data.due.replace(/-/g, "/"));
     const isoDate = localDate.toISOString();
@@ -96,13 +106,13 @@ export const useTasks = () => {
         status: newRow.status,
         points: newRow.points_possible,
         platform: newRow.platform,
-        userId: newRow.user_id, // Ensure new task state has the ID
+        userId: newRow.user_id,
       };
       setTodos((prev) => [newTask, ...prev]);
     }
   };
 
-  const toggleAssignment = async (id: number) => {
+  const toggleAssignment = async (id: string) => {
     const taskToToggle = todos.find((t) => t.id === id);
     if (!taskToToggle) return;
 
@@ -126,25 +136,12 @@ export const useTasks = () => {
     }
   };
 
-  const deleteAssignment = async (id: number) => {
-    const { error } = await supabase
-      .from("assignments_duplicate")
-      .delete()
-      .eq("assignment_id", id);
-
-    if (!error) setTodos((prev) => prev.filter((t) => t.id !== id));
-  };
-
-  const updateAssignment = async (id: number, updatedFields: Partial<Task>) => {
+  const updateAssignment = async (id: string, updatedFields: Partial<Task>) => {
     const dbPayload: any = {};
     if (updatedFields.assignment)
       dbPayload.assignment_name = updatedFields.assignment;
     if (updatedFields.course) dbPayload.course_name = updatedFields.course;
-
-    if (updatedFields.due) {
-      dbPayload.due_date = updatedFields.due.toISOString();
-    }
-
+    if (updatedFields.due) dbPayload.due_date = updatedFields.due.toISOString();
     if (updatedFields.status !== undefined)
       dbPayload.status = updatedFields.status;
 
@@ -164,7 +161,6 @@ export const useTasks = () => {
     todos,
     loading,
     addAssignment,
-    deleteAssignment,
     toggleAssignment,
     updateAssignment,
     fetchTasks,
