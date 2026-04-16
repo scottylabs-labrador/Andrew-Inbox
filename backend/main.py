@@ -71,10 +71,12 @@ class UserRequest(BaseModel):
     user_id: str
 
 @app.post("/sync")
-async def trigger_sync(request: UserRequest, background_tasks: BackgroundTasks):
-    background_tasks.add_task(sync_supabase, request.user_id)
-    
-    return {
-        "status": "accepted",
-        "message": f"Sync started for {request.user_id}. Check Supabase shortly."
-    }
+def trigger_sync(request: UserRequest):
+    try:
+        sync_supabase(request.user_id)
+        return {
+            "status": "success",
+            "message": f"Sync completed for {request.user_id}."
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

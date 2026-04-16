@@ -1,5 +1,6 @@
-import { Box, Button, Dialog, HStack, VStack } from "@chakra-ui/react";
+import { Box, Button, Dialog, HStack, VStack, Link } from "@chakra-ui/react";
 import type { Announce } from "../hooks/useAnnounce";
+import { LuExternalLink } from "react-icons/lu";
 
 interface Props {
   a: Announce;
@@ -20,43 +21,44 @@ export default function AnnoucementOpen({ a, onToggle }: Props) {
         borderTopRadius="lg"
         borderBottom="1px solid"
         borderColor="gray.600"
-        py={4}
+        py={6}
+        px={4}
       >
-        <VStack>
+        <VStack gap={2} w="100%" align="center" textAlign="center">
           <Dialog.Title
-            fontSize="xl"
+            fontSize="lg"
             fontWeight="bold"
             color="white"
-            mt={1}
-            textAlign="center"
-            width="100%"
+            lineClamp={2}
           >
             {a.title}
           </Dialog.Title>
-          <HStack justify="space-between" align="center" mb={1}>
+
+          <HStack gap={3} justify="center">
             <Box
               fontSize="xs"
               color="blue.400"
               fontWeight="bold"
               letterSpacing="wider"
             >
-              <p>{a.course.toUpperCase()}</p>
+              {a.course.toUpperCase()}
             </Box>
-            <Box fontSize="xs" color="gray.400">
-              <p>{formattedDate}</p>
+            <Box w="1px" h="12px" bg="gray.600" />
+            <Box fontSize="xs" color="gray.500">
+              {formattedDate}
             </Box>
           </HStack>
         </VStack>
       </Dialog.Header>
 
-      <Dialog.Body bg="gray.700" py={6}>
+      <Dialog.Body bg="gray.700" py={8} px={6}>
         <Box
           color="gray.200"
           fontSize="sm"
           lineHeight="1.6"
           whiteSpace="pre-wrap"
         >
-          <p>{a.description}</p>
+          {a.description}
         </Box>
       </Dialog.Body>
 
@@ -67,29 +69,61 @@ export default function AnnoucementOpen({ a, onToggle }: Props) {
         borderColor="gray.600"
         p={3}
       >
-        {a.is_read && (
-          <Button
-            bg="blue.600"
-            color="white"
-            size="sm"
-            px={5}
-            _hover={{ bg: "blue.700" }}
-            onClick={onToggle}
-          >
-            Mark as Unread
-          </Button>
-        )}
+        <HStack w="100%" justify="center" gap={3} wrap="nowrap">
+          {a.link && (
+            <Link
+              href={a.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              _hover={{ textDecoration: "none" }}
+              flex="0 0 auto"
+            >
+              <Button
+                variant="outline"
+                borderColor="blue.500"
+                color="blue.400"
+                size="sm"
+                fontSize="xs"
+                h="32px"
+                px={3}
+                cursor="pointer"
+                _hover={{ bg: "blue.900", borderColor: "blue.400" }}
+              >
+                Link <LuExternalLink size={12} style={{ marginLeft: "4px" }} />
+              </Button>
+            </Link>
+          )}
 
-        <Dialog.ActionTrigger asChild>
           <Button
-            variant="ghost"
-            color="gray.400"
-            _hover={{ bg: "gray.800", color: "white" }}
+            variant="subtle"
+            colorPalette="blue"
             size="sm"
+            fontSize="xs"
+            h="32px"
+            px={3}
+            flex="1"
+            maxWidth="130px"
+            onClick={onToggle}
+            whiteSpace="nowrap"
           >
-            Close
+            {a.is_read ? "Mark as Unread" : "Mark as Read"}
           </Button>
-        </Dialog.ActionTrigger>
+
+          <Dialog.ActionTrigger asChild>
+            <Button
+              variant="ghost"
+              color="gray.400"
+              size="sm"
+              fontSize="xs"
+              h="32px"
+              px={3}
+              flex="0 0 auto"
+              _hover={{ bg: "gray.800", color: "white" }}
+            >
+              Close
+            </Button>
+          </Dialog.ActionTrigger>
+        </HStack>
       </Dialog.Footer>
     </>
   );

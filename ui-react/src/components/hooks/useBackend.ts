@@ -11,9 +11,7 @@ export const useBackend = () => {
     try {
       const response = await fetch("http://localhost:8000/sync", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: userId }),
       });
 
@@ -22,7 +20,8 @@ export const useBackend = () => {
         throw new Error(errorData.detail || `Sync failed: ${response.status}`);
       }
 
-      return await response.json();
+      const data = await response.json();
+      return data;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
       setError(message);
