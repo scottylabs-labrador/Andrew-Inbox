@@ -67,6 +67,7 @@ def send_canvas_to_supabase(user_id, CANVAS_TOKEN):
 
    # GET ASSIGNMENTS & SEND TO SUPABASE
    for course in courses:
+       print("COURSE")
        course_id = course["id"]
        course_name = course.get("name", "Unnamed Course")
        try:
@@ -92,7 +93,7 @@ def send_canvas_to_supabase(user_id, CANVAS_TOKEN):
            assignment_record = {
                "user_id": user_id,
                "course_name": course_name,
-               "assignment_id": assignment_id_increment,
+               "assignment_id": f"{user_id} canvas {a["id"]}",
                "assignment_name": a["name"],
                "due_date": due_date,
                "points_possible": a.get("points_possible"),
@@ -101,9 +102,9 @@ def send_canvas_to_supabase(user_id, CANVAS_TOKEN):
                "platform": "Canvas"
            }
 
-
+           print("GOING TO INSERT TO SUPABSER FROM CANVSA")
            # Insert into Supabase
            try:
-               response = supabase.table("assignments_duplicate").upsert(assignment_record, on_conflict="id").execute()
+               response = supabase.table("assignments_duplicate").upsert(assignment_record, on_conflict="assignment_id").execute()
            except Exception as e:
                print("Supabase insert exception:", e)

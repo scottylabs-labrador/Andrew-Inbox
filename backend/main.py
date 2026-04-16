@@ -9,6 +9,7 @@ from fastapi import FastAPI, BackgroundTasks, HTTPException
 from pydantic import BaseModel
 from canvas import send_canvas_to_supabase
 from piazza.piazza_to_supabase import send_piazza_to_supabase
+from gradescope import send_gradescope_to_supabase
 import os   
 from dotenv import load_dotenv
 
@@ -52,6 +53,7 @@ def sync_supabase(user_id):
     if not CANVAS_API_KEY:
         print(f"Error: No API key found for {user_id}")
         return
+    send_gradescope_to_supabase(user_id, CANVAS_API_KEY)
     send_piazza_to_supabase(user_id, CANVAS_API_KEY)
     send_canvas_to_supabase(user_id, CANVAS_API_KEY)
 

@@ -5,6 +5,14 @@ from  datetime import datetime, timezone
 from bs4 import BeautifulSoup
 from selenium import webdriver
 import gradescopeapi.classes._helpers._assignment_helpers as gscope_helpers
+
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[2]))
+
+from config import supabase
+
 # =========================
 # 4. GRADESCOPE LOGIN (IF APPLICABLE)
 # =========================
@@ -26,6 +34,7 @@ import gradescopeapi.classes._helpers._assignment_helpers as gscope_helpers
 
 # with open('gradescope_data.csv', 'w', newline='') as csvfile:
 def send_gradescope_to_supabase(user_id, CANVAS_TOKEN):
+
     def get_paginated(url, HEADERS):
         results = []
         while url:
@@ -66,12 +75,12 @@ def send_gradescope_to_supabase(user_id, CANVAS_TOKEN):
                 active_courses.append(course)
         return active_courses
 
-    def get_class_ext_tools(course_id, CANVAS_BASE_URL):
+    def get_class_ext_tools(course_id, CANVAS_BASE_URL, HEADERS):
         # Access course external tools
         ext_tools = []
         try:
             ext_tools = get_paginated(
-                f"{CANVAS_BASE_URL}/api/v1/courses/{course_id}/external_tools/visible_course_nav_tools")
+                f"{CANVAS_BASE_URL}/api/v1/courses/{course_id}/external_tools/visible_course_nav_tools", HEADERS)
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 403:
                 # print(f"\n{course_name}")
@@ -130,7 +139,7 @@ def send_gradescope_to_supabase(user_id, CANVAS_TOKEN):
             a["course_id"] = course_id
             assignment_record = {
                 "course_name": a["course_name"],
-                "assignment_id": user_id + "Gradescope" + a["assignment_id"],
+                "assignment_id": f"{user_id} gradescope {a["assignment_id"]}",
                 "assignment_name": a["name"],
                 "due_date": a["due_date"].isoformat() if a["due_date"] else None,
                 "points_possible": a.get("max_grade"),
@@ -140,12 +149,13 @@ def send_gradescope_to_supabase(user_id, CANVAS_TOKEN):
                 "platform": "Gradescope"
             }
         # Insert into Supabase
+            print(assignment_record)
             try:
-                response = supabase.table("assignments").upsert(assignment_record,
+                response = supabase.table("assignments_duplicate").upsert(assignment_record,
                                                                 on_conflict="assignment_id",
                                                                 ignore_duplicates=True).execute()
-                if not response.data:
-                    print("Supabase insert failed:", response)
+                # if not response.data:
+                #     print("Supabase insert failed:", response)
             except Exception as e:
                 print("Supabase insert exception:", e)
 
@@ -163,7 +173,7 @@ def send_gradescope_to_supabase(user_id, CANVAS_TOKEN):
         course_id = course["id"]
         course_name = course.get("name", "Unnamed Course")
 
-        ext_tools = get_class_ext_tools(course_id)
+        ext_tools = get_class_ext_tools(course_id, CANVAS_BASE_URL, HEADERS)
         if not ext_tools:
             continue
 
