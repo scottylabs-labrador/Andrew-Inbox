@@ -1,6 +1,5 @@
 import { Box, Button, Dialog, HStack, VStack } from "@chakra-ui/react";
-import type { Announce } from "../fakedata/useAnnouncef";
-// import type { Announce } from "../hooks/useAnnounce";
+import type { Announce } from "../hooks/useAnnounce";
 
 interface Props {
   a: Announce;
@@ -8,7 +7,7 @@ interface Props {
 }
 
 export default function AnnoucementOpen({ a, onToggle }: Props) {
-  const formattedDate = a.date.toLocaleDateString("en-US", {
+  const formattedDate = new Date(a.date).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -49,6 +48,7 @@ export default function AnnoucementOpen({ a, onToggle }: Props) {
           </HStack>
         </VStack>
       </Dialog.Header>
+
       <Dialog.Body bg="gray.700" py={6}>
         <Box
           color="gray.200"
@@ -56,9 +56,10 @@ export default function AnnoucementOpen({ a, onToggle }: Props) {
           lineHeight="1.6"
           whiteSpace="pre-wrap"
         >
-          <p>{a.text}</p>
+          <p>{a.description}</p>
         </Box>
       </Dialog.Body>
+
       <Dialog.Footer
         bg="gray.700"
         borderBottomRadius="lg"
@@ -66,7 +67,7 @@ export default function AnnoucementOpen({ a, onToggle }: Props) {
         borderColor="gray.600"
         p={3}
       >
-        {!a.isUnread && (
+        {a.is_read && (
           <Button
             bg="blue.600"
             color="white"
@@ -78,6 +79,7 @@ export default function AnnoucementOpen({ a, onToggle }: Props) {
             Mark as Unread
           </Button>
         )}
+
         <Dialog.ActionTrigger asChild>
           <Button
             variant="ghost"

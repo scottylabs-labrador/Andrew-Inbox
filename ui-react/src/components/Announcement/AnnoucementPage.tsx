@@ -1,12 +1,13 @@
 import { Box, Center, Dialog, HStack, Spinner, VStack } from "@chakra-ui/react";
-// import { useAnnounce, type Announce } from "../hooks/useAnnounce";
+import { useAnnounce, type Announce } from "../hooks/useAnnounce";
 import AnnouncementCard from "./AnnouncementCard";
 import AnnoucementOpen from "./AnnouncementOpen";
 import { useState } from "react";
-import { useAnnouncef, type Announce } from "../fakedata/useAnnouncef";
+import type { Creds } from "@/App";
 
 interface Props {
   filter: string;
+  c: Creds | null;
 }
 
 const emptyMessages: Record<string, string> = {
@@ -16,13 +17,12 @@ const emptyMessages: Record<string, string> = {
   Month: "Nothing this month!",
 };
 
-export default function AnnoucementPage({ filter }: Props) {
-  //const { ann, loading, toggleAnnounce } = useAnnounce();
-  const { ann, loading, toggleAnnounce } = useAnnouncef();
+export default function AnnoucementPage({ filter, c }: Props) {
+  const { ann, loading, toggleAnnounce } = useAnnounce();
   const [selectedAnn, setSelectedAnn] = useState<Announce | null>(null);
 
-  const handleToggle = (id: number) => {
-    toggleAnnounce(id);
+  const handleToggle = (id: string, currentStatus: boolean) => {
+    toggleAnnounce(id, currentStatus);
     setSelectedAnn(null);
   };
 
@@ -38,10 +38,10 @@ export default function AnnoucementPage({ filter }: Props) {
   }
 
   const filteredAnn = ann.filter((a) => {
+    if (a.user_id !== c?.username) return false;
     if (filter === "All") return true;
 
     const now = new Date();
-
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     const annRawDate = new Date(a.date);
@@ -61,7 +61,6 @@ export default function AnnoucementPage({ filter }: Props) {
         today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
       const monday = new Date(today);
       monday.setDate(diffToMonday);
-
       return annDate >= monday && annDate <= today;
     }
 
@@ -76,7 +75,7 @@ export default function AnnoucementPage({ filter }: Props) {
   });
 
   const sortedAnn = [...filteredAnn].sort(
-    (a, b) => b.date.getTime() - a.date.getTime(),
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
 
   return (
@@ -93,12 +92,12 @@ export default function AnnoucementPage({ filter }: Props) {
           {sortedAnn.length > 0 ? (
             sortedAnn.map((item) => (
               <Box
-                key={item.id}
+                key={item.announcement_id}
                 w="100%"
                 onClick={() => {
                   setSelectedAnn(item);
-                  if (item.isUnread) {
-                    toggleAnnounce(item.id);
+                  if (!item.is_read) {
+                    toggleAnnounce(item.announcement_id, item.is_read);
                   }
                 }}
                 cursor="pointer"
@@ -108,12 +107,7 @@ export default function AnnoucementPage({ filter }: Props) {
             ))
           ) : (
             <Center py={10} flexDirection="column">
-              <p
-                style={{
-                  color: "gray",
-                  textAlign: "center",
-                }}
-              >
+              <p style={{ color: "gray", textAlign: "center" }}>
                 {emptyMessages[filter] || emptyMessages.All}
               </p>
             </Center>
@@ -139,7 +133,9 @@ export default function AnnoucementPage({ filter }: Props) {
             {selectedAnn && (
               <AnnoucementOpen
                 a={selectedAnn}
-                onToggle={() => handleToggle(selectedAnn.id)}
+                onToggle={() =>
+                  handleToggle(selectedAnn.announcement_id, selectedAnn.is_read)
+                }
               />
             )}
           </Dialog.Content>

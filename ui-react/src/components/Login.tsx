@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useUser } from "./hooks/useUser";
+import type { Creds } from "@/App";
 
 const loginSchema = z.object({
   username: z.string().min(1, { message: "Username is required." }),
@@ -14,10 +15,11 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 interface LoginPageProps {
+  setC: (c: Creds) => void;
   onLogin: () => void;
 }
 
-export default function LoginPage({ onLogin }: LoginPageProps) {
+export default function LoginPage({ onLogin, setC }: LoginPageProps) {
   const [showPopup, setShowPopup] = useState(false);
   const { registerUser, loading: isSubmitting, error: dbError } = useUser();
 
@@ -33,6 +35,10 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     const result = await registerUser(data.username, data.token);
 
     if (result.success) {
+      setC({
+        username: data.username,
+        token: data.token,
+      });
       onLogin();
     }
   };
@@ -42,7 +48,6 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
       bg="gray.800"
       w="360px"
       h="600px"
-      borderRadius="2xl"
       overflow="hidden"
       display="flex"
       flexDirection="column"
@@ -71,7 +76,6 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
       <form style={{ width: "100%" }} onSubmit={handleSubmit(onSubmit)}>
         <VStack gap={5} w="100%" align="stretch">
-          {/* DB Error Message */}
           {dbError && (
             <Box
               bg="red.900/40"

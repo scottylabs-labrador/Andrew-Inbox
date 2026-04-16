@@ -1,12 +1,16 @@
 import { Box, Text, HStack } from "@chakra-ui/react";
-import type { Announce } from "../fakedata/useAnnouncef";
-// import type { Announce } from "../hooks/useAnnounce";
+import type { Announce } from "../hooks/useAnnounce";
 
 interface Props {
   ann: Announce;
 }
 
 export default function AnnouncementCard({ ann }: Props) {
+  const displayDate = new Date(ann.date).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+
   return (
     <Box bg="gray.700" borderRadius="lg" px={4} py={3} w="100%">
       <HStack gap={3} align="start">
@@ -15,9 +19,10 @@ export default function AnnouncementCard({ ann }: Props) {
             w={2}
             h={2}
             borderRadius="full"
-            bg={ann.isUnread ? "blue.400" : "transparent"}
+            bg={!ann.is_read ? "blue.400" : "transparent"}
           />
         </Box>
+
         <Box
           w={8}
           h={8}
@@ -30,21 +35,29 @@ export default function AnnouncementCard({ ann }: Props) {
           justifyContent="center"
         >
           <Text fontSize="xs" color="white">
-            P
+            {ann.platform ? ann.platform.charAt(0).toUpperCase() : "P"}
           </Text>
         </Box>
+
         <Box flex={1} minW={0}>
-          <Text color="white" fontWeight="bold" fontSize="sm">
-            {ann.title}
-          </Text>
+          <HStack justify="space-between" align="baseline">
+            <Text color="white" fontWeight="bold" fontSize="sm" lineClamp={1}>
+              {ann.title}
+            </Text>
+            <Text color="gray.500" fontSize="2xs" flexShrink={0}>
+              {displayDate}
+            </Text>
+          </HStack>
+
           <HStack gap={1} mb={1}>
             <Box w={2} h={2} borderRadius="full" bg="red.400" />
             <Text color="gray.400" fontSize="xs">
               {ann.course}
             </Text>
           </HStack>
+
           <Text color="gray.300" fontSize="xs" lineHeight="short" lineClamp={2}>
-            {ann.text}
+            {ann.description}
           </Text>
         </Box>
       </HStack>
