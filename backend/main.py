@@ -12,6 +12,7 @@ from piazza.piazza_to_supabase import send_piazza_to_supabase
 from gradescope import send_gradescope_to_supabase
 import os   
 from dotenv import load_dotenv
+from fastapi.middleware.cors import CORSMiddleware
 
 import sys
 from pathlib import Path
@@ -22,6 +23,13 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 from config import supabase
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Allows your frontend to talk to the backend
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def get_entry_by_pk(user_id: any):
     try:
