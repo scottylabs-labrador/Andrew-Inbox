@@ -50,8 +50,8 @@ def get_piazza_posts(driver):
             # Stop at "Last Week"
             try:
                 week_span = group.find_element(By.CSS_SELECTOR, "span.d-flex.align-items-center")
-                if "last week" in week_span.text.lower():
-                    print("Reached 'Last Week' — stopping")
+                if week_span.text.strip()[:4] == "Week":
+                    print("Reached 'Week' — stopping")
                     break
             except:
                 pass

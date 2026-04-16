@@ -32,12 +32,15 @@ def send_canvas_to_supabase(user_id, CANVAS_TOKEN):
            date_str.replace("Z", "+00:00")
        ).isoformat()
    def get_paginated(url):
+       print("START PAGINATED")
        results = []
        while url:
            r = requests.get(url, headers=HEADERS)
            r.raise_for_status()
            results.extend(r.json())
            url = r.links.get("next", {}).get("url")
+       print("END PAGINATED")
+
        return results
    def get_active_classes(courses):
         # Get current time in UTC to match Canvas format
