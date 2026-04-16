@@ -25,7 +25,7 @@ export const useTasks = () => {
   const fetchTasks = async () => {
     setLoading(true);
     const { data, error } = await supabase
-      .from("assignments")
+      .from("assignments_duplicate")
       .select("*")
       .order("due_date", { ascending: true });
 
@@ -68,7 +68,7 @@ export const useTasks = () => {
     const isoDate = localDate.toISOString();
 
     const { data: insertedData, error } = await supabase
-      .from("assignments")
+      .from("assignments_duplicate")
       .insert([
         {
           assignment_id: nextId,
@@ -114,7 +114,7 @@ export const useTasks = () => {
     );
 
     const { error } = await supabase
-      .from("assignments")
+      .from("assignments_duplicate")
       .update({ status: nextStatus })
       .eq("assignment_id", id);
 
@@ -128,7 +128,7 @@ export const useTasks = () => {
 
   const deleteAssignment = async (id: number) => {
     const { error } = await supabase
-      .from("assignments")
+      .from("assignments_duplicate")
       .delete()
       .eq("assignment_id", id);
 
@@ -149,7 +149,7 @@ export const useTasks = () => {
       dbPayload.status = updatedFields.status;
 
     const { error } = await supabase
-      .from("assignments")
+      .from("assignments_duplicate")
       .update(dbPayload)
       .eq("assignment_id", id);
 
