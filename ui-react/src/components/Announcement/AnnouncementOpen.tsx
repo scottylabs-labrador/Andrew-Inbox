@@ -94,20 +94,22 @@ export default function AnnoucementOpen({ a, onToggle }: Props) {
             </Link>
           )}
 
-          <Button
-            variant="subtle"
-            colorPalette="blue"
-            size="sm"
-            fontSize="xs"
-            h="32px"
-            px={3}
-            flex="1"
-            maxWidth="130px"
-            onClick={onToggle}
-            whiteSpace="nowrap"
-          >
-            {a.is_read ? "Mark as Unread" : "Mark as Read"}
-          </Button>
+          {a.is_read && (
+            <Button
+              variant="subtle"
+              colorPalette="blue"
+              size="sm"
+              fontSize="xs"
+              h="32px"
+              px={3}
+              flex="1"
+              maxWidth="130px"
+              onClick={onToggle}
+              whiteSpace="nowrap"
+            >
+              Mark as Unread
+            </Button>
+          )}
 
           <Dialog.ActionTrigger asChild>
             <Button
