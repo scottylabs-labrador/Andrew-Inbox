@@ -29,7 +29,9 @@ const emptyMessages: Record<string, string> = {
 };
 
 export default function TasksPage({ filter, c }: Props) {
-  const { todos, loading, addAssignment, toggleAssignment } = useTasks();
+  const { todos, loading, addAssignment, toggleAssignment } = useTasks(
+    c?.username,
+  );
   const [isOpen, setIsOpen] = useState(false);
   const [isOverdueOpen, setIsOverdueOpen] = useState(true);
 
@@ -37,25 +39,25 @@ export default function TasksPage({ filter, c }: Props) {
     const now = new Date();
     const year = now.getFullYear();
 
-    if (now >= new Date(year, 7, 25) && now <= new Date(year, 11, 20)) {
-      return { start: new Date(year, 7, 25), end: new Date(year, 11, 20) };
-    }
-    if (now >= new Date(year, 11, 21) || now <= new Date(year, 4, 7)) {
+    if (now >= new Date(year, 11, 21) || now <= new Date(year, 5, 7)) {
       const startYear = now.getMonth() === 11 ? year : year - 1;
       const endYear = now.getMonth() === 11 ? year + 1 : year;
       return {
         start: new Date(startYear, 11, 21),
-        end: new Date(endYear, 4, 7),
+        end: new Date(endYear, 5, 7),
       };
     }
-    return { start: new Date(year, 4, 8), end: new Date(year, 7, 24) };
+    if (now >= new Date(year, 7, 25) && now <= new Date(year, 11, 20)) {
+      return { start: new Date(year, 7, 25), end: new Date(year, 11, 20) };
+    }
+    return { start: new Date(year, 5, 8), end: new Date(year, 5, 24) };
   };
 
   if (loading) {
     return (
       <Center h="200px">
         <HStack>
-          <p> Loading </p>
+          <Text> Loading </Text>
           <Spinner color="blue.500" />
         </HStack>
       </Center>
@@ -63,35 +65,45 @@ export default function TasksPage({ filter, c }: Props) {
   }
 
   const { start, end } = getSemesterRange();
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const todayDate = new Date();
+  todayDate.setHours(0, 0, 0, 0);
 
   const filteredTodos = todos.filter((task) => {
     if (task.userId !== c?.username) return false;
 
-    const rawTaskDate = new Date(task.due);
-    if (rawTaskDate < start || rawTaskDate > end) return false;
+    const taskDate = new Date(task.due);
+    taskDate.setHours(0, 0, 0, 0);
+
+    const semesterStart = new Date(start);
+    semesterStart.setHours(0, 0, 0, 0);
+    const semesterEnd = new Date(end);
+    semesterEnd.setHours(0, 0, 0, 0);
+
+    if (taskDate < semesterStart || taskDate > semesterEnd) return false;
+
+    const isOverdue = taskDate < todayDate && !task.status;
+    if (isOverdue) return true;
+
     if (filter === "All") return true;
 
-    const taskDate = new Date(
-      rawTaskDate.getFullYear(),
-      rawTaskDate.getMonth(),
-      rawTaskDate.getDate(),
-    );
-
-    if (taskDate < today && !task.status) return true;
-    if (filter === "Day") return taskDate.getTime() === today.getTime();
-    if (filter === "Week") {
-      const sunday = new Date(today);
-      sunday.setDate(today.getDate() + (6 - today.getDay()));
-      return taskDate <= sunday && taskDate >= today;
+    if (filter === "Day") {
+      return taskDate.getTime() === todayDate.getTime();
     }
+
+    if (filter === "Week") {
+      const nextSunday = new Date(todayDate);
+      nextSunday.setDate(todayDate.getDate() + (6 - todayDate.getDay()));
+      return taskDate >= todayDate && taskDate <= nextSunday;
+    }
+
     if (filter === "Month") {
       return (
-        taskDate.getMonth() === today.getMonth() &&
-        taskDate.getFullYear() === today.getFullYear()
+        taskDate.getMonth() === todayDate.getMonth() &&
+        taskDate.getFullYear() === todayDate.getFullYear() &&
+        taskDate >= todayDate
       );
     }
+
     return false;
   });
 
@@ -99,12 +111,12 @@ export default function TasksPage({ filter, c }: Props) {
     .filter((t) => {
       const d = new Date(t.due);
       const taskDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-      return taskDate < today && !t.status;
+      return taskDate < todayDate && !t.status;
     })
     .sort((a, b) => new Date(a.due).getTime() - new Date(b.due).getTime());
 
   const upcomingTasks = filteredTodos
-    .filter((t) => !overdueTasks.find((ot) => ot.id === t.id))
+    .filter((t) => !overdueTasks.some((ot) => ot.id === t.id))
     .sort((a, b) => {
       if (a.status !== b.status) return a.status ? 1 : -1;
       return new Date(a.due).getTime() - new Date(b.due).getTime();
@@ -151,21 +163,23 @@ export default function TasksPage({ filter, c }: Props) {
             </Box>
           )}
 
-          {upcomingTasks.length > 0 ? (
-            upcomingTasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                taskd={task}
-                onToggle={() => toggleAssignment(task.id)}
-              />
-            ))
-          ) : overdueTasks.length === 0 ? (
+          {upcomingTasks.length > 0
+            ? upcomingTasks.map((task) => (
+                <TaskCard
+                  key={task.id}
+                  taskd={task}
+                  onToggle={() => toggleAssignment(task.id)}
+                />
+              ))
+            : null}
+
+          {upcomingTasks.length === 0 && overdueTasks.length === 0 && (
             <Center py={10} flexDirection="column">
-              <p style={{ color: "gray", textAlign: "center" }}>
+              <Text color="gray.500" textAlign="center">
                 {emptyMessages[filter] || emptyMessages.All}
-              </p>
+              </Text>
             </Center>
-          ) : null}
+          )}
         </VStack>
 
         <Box position="absolute" bottom="4" right="4">

@@ -1,5 +1,6 @@
-import { Box, Text, HStack } from "@chakra-ui/react";
+import { Box, Text, HStack, Link } from "@chakra-ui/react";
 import type { Announce } from "../hooks/useAnnounce";
+import { LuExternalLink } from "react-icons/lu";
 
 interface Props {
   ann: Announce;
@@ -59,6 +60,22 @@ export default function AnnouncementCard({ ann }: Props) {
           <Text color="gray.300" fontSize="xs" lineHeight="short" lineClamp={2}>
             {ann.description}
           </Text>
+
+          {ann.link && (
+            <Link
+              href={ann.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              color="blue.400"
+              fontSize="2xs"
+              display="flex"
+              alignItems="center"
+              gap={1}
+              _hover={{ textDecoration: "underline", color: "blue.300" }}
+            >
+              View Original <LuExternalLink size={10} />
+            </Link>
+          )}
         </Box>
       </HStack>
     </Box>

@@ -12,6 +12,7 @@ from piazza.piazza_to_supabase import send_piazza_to_supabase
 from gradescope import send_gradescope_to_supabase
 import os   
 from dotenv import load_dotenv
+from fastapi.middleware.cors import CORSMiddleware
 
 import sys
 from pathlib import Path
@@ -22,6 +23,13 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 from config import supabase
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Allows your frontend to talk to the backend
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def get_entry_by_pk(user_id: any):
     try:
@@ -63,10 +71,12 @@ class UserRequest(BaseModel):
     user_id: str
 
 @app.post("/sync")
-async def trigger_sync(request: UserRequest, background_tasks: BackgroundTasks):
-    background_tasks.add_task(sync_supabase, request.user_id)
-    
-    return {
-        "status": "accepted",
-        "message": f"Sync started for {request.user_id}. Check Supabase shortly."
-    }
+def trigger_sync(request: UserRequest):
+    try:
+        sync_supabase(request.user_id)
+        return {
+            "status": "success",
+            "message": f"Sync completed for {request.user_id}."
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
