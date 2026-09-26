@@ -1,5 +1,10 @@
-supabase
-requests
-dotenv
+beautifulsoup4
+fastapi
+gradescopeapi
 openai
+pydantic
+python-dotenv
+requests
 selenium
+supabase
+uvicorn
