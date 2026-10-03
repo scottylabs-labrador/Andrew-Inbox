@@ -1,17 +1,19 @@
-steps to install dependencies: Frontend
+steps to install dependencies:
 
+In one terminal:
 cd ui-react
 npm i
-add .env to the ui-react folder
-you have the keys alr
-Backend
 
-cd backend
-run "source .venv/bin/activate"
-steps to run demo:
+In the other terminal:
+cd backedn
+source .venv/bin/activate
 
-on ui-react/ run "npm run dev"
-on backend/ run "uvicorn main:app --reload --host 0.0.0.0 --port 8000"
+back in the first terminal:
+npm run dev
+
+back in the second terminal:
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
 steps to build as a chrome extension:
 
 cd ui-react
