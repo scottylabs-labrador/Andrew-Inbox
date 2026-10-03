@@ -96,7 +96,7 @@ def send_canvas_to_supabase(user_id, CANVAS_TOKEN):
            assignment_record = {
                "user_id": user_id,
                "course_name": course_name,
-               "assignment_id": f"{user_id} canvas {a["id"]}",
+               "assignment_id": f"{user_id} canvas {a['id']}",
                "assignment_name": a["name"],
                "due_date": due_date,
                "points_possible": a.get("points_possible"),
