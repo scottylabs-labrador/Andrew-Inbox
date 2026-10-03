@@ -5,7 +5,7 @@ cd ui-react
 npm i
 
 In the other terminal:
-cd backedn
+cd backend
 source .venv/bin/activate
 
 back in the first terminal:
