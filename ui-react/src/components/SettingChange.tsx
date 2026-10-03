@@ -1,12 +1,31 @@
 import type { Creds } from "@/App";
-import { Box, Code, Text } from "@chakra-ui/react";
+import { Box, Button, Text, Textarea } from "@chakra-ui/react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const schema = z.object({
+  newTok: z.string(),
+});
+
+type FormData = z.infer<typeof schema>;
 
 interface Props {
   c: Creds | null;
   setC: (c: Creds) => void;
+  onSubmit: (data: FormData) => void;
 }
 
-export default function SettingChange({ c }: Props) {
+export default function SettingChange({ c, onSubmit }: Props) {
+  const { register, handleSubmit, reset } = useForm<FormData>({
+    resolver: zodResolver(schema),
+  });
+
+  const onInternalSubmit = (data: FormData) => {
+    onSubmit(data);
+    reset();
+  };
+
   return (
     <Box
       bg="gray.800"
@@ -50,33 +69,31 @@ export default function SettingChange({ c }: Props) {
           borderRadius="lg"
           border="1px solid"
           borderColor="gray.700"
-          flex={1}
-          display="flex"
-          flexDirection="column"
         >
-          <Text fontSize="xs" fontWeight="bold" color="gray.400" mb={2}>
+          <Text fontSize="xs" fontWeight="bold" color="gray.400" mb={1}>
             Canvas Token
           </Text>
-          <Box
-            flex={1}
-            bg="gray.800"
-            p={3}
-            borderRadius="md"
-            border="1px solid"
-            borderColor="gray.700"
-            overflowY="auto"
-          >
-            <Code
-              bg="transparent"
-              color="green.300"
-              fontSize="xs"
-              fontFamily="mono"
-              whiteSpace="pre-wrap"
-              wordBreak="break-all"
+          <form onSubmit={handleSubmit(onInternalSubmit)}>
+            <Box
+              flex={1}
+              bg="gray.800"
+              p={3}
+              borderRadius="md"
+              border="1px solid"
+              borderColor="gray.700"
+              overflowY="auto"
             >
-              {c?.token ?? "No token available"}
-            </Code>
-          </Box>
+              <Textarea
+                {...register("newTok")}
+                placeholder={c?.token ?? "Enter Canvas Token"}
+                variant="outline"
+                minH="90px"
+              />
+            </Box>
+            <Button type="submit" bg="blue.500" color="white" size="sm" px={4}>
+              Change Token
+            </Button>
+          </form>
         </Box>
       </Box>
     </Box>

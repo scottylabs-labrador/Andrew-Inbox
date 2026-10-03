@@ -44,5 +44,13 @@ export const useUser = () => {
     }
   };
 
-  return { registerUser, loading, error };
+  const updateTk = async (updatedFields: {
+    username: string;
+    token: string;
+  }) => {
+    const dbPayload: any = {};
+    if (updatedFields.token) dbPayload.canvas_token = updatedFields.token;
+  };
+
+  return { registerUser, updateTk, loading, error };
 };

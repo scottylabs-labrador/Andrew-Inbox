@@ -25,6 +25,10 @@ export default function MainView({ c, setC }: Props) {
     setTimeFilter("All");
   };
 
+  function updateTk(data: { newTok: string }) {
+    throw new Error("Function not implemented.");
+  }
+
   return (
     <Box
       bg="gray.800"
@@ -169,7 +173,15 @@ export default function MainView({ c, setC }: Props) {
         {activeTab === "announcements" && (
           <AnnoucementPage filter={timeFilter} c={c} />
         )}
-        {activeTab === "settings" && <SettingChange c={c} setC={setC} />}
+        {activeTab === "settings" && (
+          <SettingChange
+            c={c}
+            setC={setC}
+            onSubmit={(data) => {
+              updateTk(data);
+            }}
+          />
+        )}
       </Box>
     </Box>
   );
