@@ -6,7 +6,7 @@ interface Props {
   setC: (c: Creds) => void;
 }
 
-export default function SettingChange({ c, setC }: Props) {
+export default function SettingChange({ c }: Props) {
   return (
     <Box
       bg="gray.800"
@@ -37,7 +37,7 @@ export default function SettingChange({ c, setC }: Props) {
           borderColor="gray.700"
         >
           <Text fontSize="xs" fontWeight="bold" color="gray.400" mb={1}>
-            USERNAME
+            Username
           </Text>
           <Text fontSize="sm" fontWeight="semibold" color="white">
             {c?.username ?? "Not logged in"}
