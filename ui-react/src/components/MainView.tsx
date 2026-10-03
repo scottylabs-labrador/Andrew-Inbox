@@ -7,16 +7,20 @@ import todoicon from "../assets/todo.png";
 import annicon from "../assets/ann.png";
 import Btn from "./Btn";
 import type { Creds } from "@/App";
+import SettingChange from "./SettingChange";
 
 interface Props {
   c: Creds | null;
+  setC: (c: Creds) => void;
 }
 
-export default function MainView({ c }: Props) {
-  const [activeTab, setActiveTab] = useState<"todo" | "announcements">("todo");
+export default function MainView({ c, setC }: Props) {
+  const [activeTab, setActiveTab] = useState<
+    "todo" | "announcements" | "settings"
+  >("todo");
   const [timeFilter, setTimeFilter] = useState("All");
 
-  const handleTabChange = (tab: "todo" | "announcements") => {
+  const handleTabChange = (tab: "todo" | "announcements" | "settings") => {
     setActiveTab(tab);
     setTimeFilter("All");
   };
@@ -37,7 +41,7 @@ export default function MainView({ c }: Props) {
             {/* To-do tab */}
             <Box
               cursor="pointer"
-              px={4}
+              px={3}
               py={2}
               bg={activeTab === "todo" ? "gray.800" : "gray.900"}
               borderTopRadius="lg"
@@ -47,11 +51,11 @@ export default function MainView({ c }: Props) {
               position="relative"
               zIndex={activeTab === "todo" ? 1 : 0}
             >
-              <HStack gap={2}>
+              <HStack gap={1.5}>
                 <Image
                   src={todoicon}
                   alt="todo icon"
-                  boxSize="16px"
+                  boxSize="14px"
                   objectFit="contain"
                   filter={
                     activeTab === "todo"
@@ -60,7 +64,7 @@ export default function MainView({ c }: Props) {
                   }
                 />
                 <Text
-                  fontSize="sm"
+                  fontSize="xs"
                   fontWeight="semibold"
                   color={activeTab === "todo" ? "white" : "gray.500"}
                 >
@@ -68,11 +72,11 @@ export default function MainView({ c }: Props) {
                 </Text>
               </HStack>
             </Box>
-            {/* Announcements tab */}
 
+            {/* Announcements tab */}
             <Box
               cursor="pointer"
-              px={4}
+              px={3}
               py={2}
               bg={activeTab === "announcements" ? "gray.800" : "gray.900"}
               borderTopRadius="lg"
@@ -84,11 +88,11 @@ export default function MainView({ c }: Props) {
               position="relative"
               zIndex={activeTab === "announcements" ? 1 : 0}
             >
-              <HStack gap={2}>
+              <HStack gap={1.5}>
                 <Image
                   src={annicon}
                   alt="ann icon"
-                  boxSize="16px"
+                  boxSize="14px"
                   objectFit="contain"
                   filter={
                     activeTab === "announcements"
@@ -97,11 +101,46 @@ export default function MainView({ c }: Props) {
                   }
                 />
                 <Text
-                  fontSize="sm"
+                  fontSize="xs"
                   fontWeight="semibold"
                   color={activeTab === "announcements" ? "white" : "gray.500"}
                 >
                   Announcements
+                </Text>
+              </HStack>
+            </Box>
+
+            {/* Settings tab */}
+            <Box
+              cursor="pointer"
+              px={3}
+              py={2}
+              bg={activeTab === "settings" ? "gray.800" : "gray.900"}
+              borderTopRadius="lg"
+              borderBottom={activeTab === "settings" ? "none" : "1px solid"}
+              borderBottomColor="gray.700"
+              onClick={() => handleTabChange("settings")}
+              position="relative"
+              zIndex={activeTab === "settings" ? 1 : 0}
+            >
+              <HStack gap={1.5}>
+                <Image
+                  src={annicon}
+                  alt="settings icon"
+                  boxSize="14px"
+                  objectFit="contain"
+                  filter={
+                    activeTab === "settings"
+                      ? "none"
+                      : "grayscale(100%) opacity(0.5)"
+                  }
+                />
+                <Text
+                  fontSize="xs"
+                  fontWeight="semibold"
+                  color={activeTab === "settings" ? "white" : "gray.500"}
+                >
+                  Settings
                 </Text>
               </HStack>
             </Box>
@@ -111,24 +150,26 @@ export default function MainView({ c }: Props) {
         </HStack>
       </Box>
 
-      {/* Time toggle bar */}
-      <Box
-        px={4}
-        py={3}
-        bg="gray.800"
-        borderBottom="1px solid"
-        borderColor="gray.700"
-      >
-        <TimeToggle selected={timeFilter} setSelected={setTimeFilter} />
-      </Box>
+      {/* Time toggle bar (only show for todo and announcements) */}
+      {activeTab !== "settings" && (
+        <Box
+          px={4}
+          py={3}
+          bg="gray.800"
+          borderBottom="1px solid"
+          borderColor="gray.700"
+        >
+          <TimeToggle selected={timeFilter} setSelected={setTimeFilter} />
+        </Box>
+      )}
 
       {/* Content */}
       <Box flex={1} overflowY="auto" px={3} py={3} bg="gray.800">
-        {activeTab === "todo" ? (
-          <TasksPage filter={timeFilter} c={c} />
-        ) : (
+        {activeTab === "todo" && <TasksPage filter={timeFilter} c={c} />}
+        {activeTab === "announcements" && (
           <AnnoucementPage filter={timeFilter} c={c} />
         )}
+        {activeTab === "settings" && <SettingChange c={c} setC={setC} />}
       </Box>
     </Box>
   );

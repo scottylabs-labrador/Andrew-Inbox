@@ -21,7 +21,7 @@ function App() {
       position="relative"
     >
       {loggedIn ? (
-        <MainView c={cred} />
+        <MainView c={cred} setC={setCred} />
       ) : (
         <LoginPage onLogin={() => setLoggedIn(true)} setC={setCred} />
       )}
