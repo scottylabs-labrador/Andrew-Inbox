@@ -156,8 +156,23 @@ def send_gradescope_to_supabase(user_id, CANVAS_TOKEN):
                                                                 ignore_duplicates=True).execute()
                 # if not response.data:
                 #     print("Supabase insert failed:", response)
+
+                # remove cross-platform dupes, Gradescope supersedes
+                check_cross_platform(assignment_record)
             except Exception as e:
                 print("Supabase insert exception:", e)
+
+    def check_cross_platform(assignment_record):
+        response = (
+            supabase.table("assignments_duplicate")
+            .delete()
+            .match(
+                {"course_name": assignment_record["course_name"],
+                 "assignment_name": assignment_record["name"],
+                 "platform": assignment_record["platform"]}
+            )
+            .execute()
+        )
 
     CANVAS_BASE_URL = "https://canvas.cmu.edu"
     session = requests.Session()
@@ -202,6 +217,7 @@ def send_gradescope_to_supabase(user_id, CANVAS_TOKEN):
                     if gradescope_data != []:
                         # write_assignments_to_csv(gradescope_data)
                         write_assignments_to_database(user_id,gradescope_data)
+
                     driver.quit()
                     
                     
