@@ -8,6 +8,7 @@ import annicon from "../assets/ann.png";
 import Btn from "./Btn";
 import type { Creds } from "@/App";
 import SettingChange from "./SettingChange";
+import { useUser } from "./hooks/useUser";
 
 interface Props {
   c: Creds | null;
@@ -20,14 +21,29 @@ export default function MainView({ c, setC }: Props) {
   >("todo");
   const [timeFilter, setTimeFilter] = useState("All");
 
+  const { updateTk, error } = useUser();
+
   const handleTabChange = (tab: "todo" | "announcements" | "settings") => {
     setActiveTab(tab);
     setTimeFilter("All");
   };
 
-  function updateTk(data: { newTok: string }) {
-    throw new Error("Function not implemented.");
-  }
+  const handleUpdateToken = async (data: { newTok: string }) => {
+    if (!c?.username) return;
+
+    const res = await updateTk({
+      username: c.username,
+      token: data.newTok,
+    });
+
+    if (res.success) {
+      // Keep local credentials state in sync with the updated token
+      setC({
+        username: c.username,
+        token: data.newTok,
+      });
+    }
+  };
 
   return (
     <Box
@@ -177,9 +193,8 @@ export default function MainView({ c, setC }: Props) {
           <SettingChange
             c={c}
             setC={setC}
-            onSubmit={(data) => {
-              updateTk(data);
-            }}
+            errorMessage={error}
+            onSubmit={handleUpdateToken}
           />
         )}
       </Box>

@@ -48,8 +48,30 @@ export const useUser = () => {
     username: string;
     token: string;
   }) => {
-    const dbPayload: any = {};
-    if (updatedFields.token) dbPayload.canvas_token = updatedFields.token;
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (!updatedFields.username || !updatedFields.token) {
+        setError("Both username and token are required to update.");
+        setLoading(false);
+        return { success: false };
+      }
+
+      const { error: updateError } = await supabase
+        .from("user")
+        .update({ canvas_token: updatedFields.token })
+        .eq("user_id", updatedFields.username);
+
+      if (updateError) throw updateError;
+
+      setLoading(false);
+      return { success: true };
+    } catch (err: any) {
+      setError("Failed to update token. Please try again.");
+      setLoading(false);
+      return { success: false };
+    }
   };
 
   return { registerUser, updateTk, loading, error };

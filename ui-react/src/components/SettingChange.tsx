@@ -5,7 +5,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 const schema = z.object({
-  newTok: z.string(),
+  newTok: z.string().min(1, "Token cannot be empty"),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -14,10 +14,16 @@ interface Props {
   c: Creds | null;
   setC: (c: Creds) => void;
   onSubmit: (data: FormData) => void;
+  errorMessage?: string | null;
 }
 
-export default function SettingChange({ c, onSubmit }: Props) {
-  const { register, handleSubmit, reset } = useForm<FormData>({
+export default function SettingChange({ c, onSubmit, errorMessage }: Props) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
@@ -27,19 +33,13 @@ export default function SettingChange({ c, onSubmit }: Props) {
   };
 
   return (
-    <Box
-      bg="gray.800"
-      w="360px"
-      h="600px"
-      display="flex"
-      flexDirection="column"
-      overflow="hidden"
-    >
+    <Box display="flex" flexDirection="column" gap={4}>
       <Box
         px={4}
         py={3}
         bg="gray.900"
-        borderBottom="1px solid"
+        borderRadius="lg"
+        border="1px solid"
         borderColor="gray.700"
       >
         <Text fontSize="sm" fontWeight="bold" color="white">
@@ -47,7 +47,7 @@ export default function SettingChange({ c, onSubmit }: Props) {
         </Text>
       </Box>
 
-      <Box flex={1} p={4} display="flex" flexDirection="column" gap={4}>
+      <Box display="flex" flexDirection="column" gap={4}>
         <Box
           bg="gray.900"
           p={3}
@@ -75,21 +75,28 @@ export default function SettingChange({ c, onSubmit }: Props) {
           </Text>
           <form onSubmit={handleSubmit(onInternalSubmit)}>
             <Box
-              flex={1}
               bg="gray.800"
               p={3}
               borderRadius="md"
               border="1px solid"
               borderColor="gray.700"
-              overflowY="auto"
+              mb={3}
             >
               <Textarea
                 {...register("newTok")}
                 placeholder={c?.token ?? "Enter Canvas Token"}
                 variant="outline"
                 minH="90px"
+                color="white"
               />
             </Box>
+
+            {(errors.newTok || errorMessage) && (
+              <Text color="red.400" fontSize="xs" mb={2}>
+                {errors.newTok?.message || errorMessage}
+              </Text>
+            )}
+
             <Button type="submit" bg="blue.500" color="white" size="sm" px={4}>
               Change Token
             </Button>
