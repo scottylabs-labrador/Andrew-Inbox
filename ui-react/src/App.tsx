@@ -10,8 +10,7 @@ export interface Creds {
 }
 
 function App() {
-  // change back after testing
-  const [loggedIn, setLoggedIn] = useState(true);
+  const [loggedIn, setLoggedIn] = useState(false);
   const [cred, setCred] = useState<Creds | null>(null);
 
   return (
