@@ -19,6 +19,7 @@ import type { Creds } from "@/App";
 interface Props {
   filter: string;
   c: Creds | null;
+  refreshKey: number;
 }
 
 const emptyMessages: Record<string, string> = {
@@ -28,9 +29,10 @@ const emptyMessages: Record<string, string> = {
   Month: "No deadlines in this month!  🗓️",
 };
 
-export default function TasksPage({ filter, c }: Props) {
+export default function TasksPage({ filter, c, refreshKey }: Props) {
   const { todos, loading, addAssignment, toggleAssignment } = useTasks(
     c?.username,
+    refreshKey,
   );
   const [isOpen, setIsOpen] = useState(false);
   const [isOverdueOpen, setIsOverdueOpen] = useState(true);

@@ -8,6 +8,7 @@ import type { Creds } from "@/App";
 interface Props {
   filter: string;
   c: Creds | null;
+  refreshKey: number;
 }
 
 const emptyMessages: Record<string, string> = {
@@ -17,8 +18,8 @@ const emptyMessages: Record<string, string> = {
   Month: "Nothing this month!",
 };
 
-export default function AnnoucementPage({ filter, c }: Props) {
-  const { ann, loading, toggleAnnounce } = useAnnounce();
+export default function AnnoucementPage({ filter, c, refreshKey }: Props) {
+  const { ann, loading, toggleAnnounce } = useAnnounce(refreshKey);
   const [selectedAnn, setSelectedAnn] = useState<Announce | null>(null);
 
   const handleToggle = (id: string, currentStatus: boolean) => {

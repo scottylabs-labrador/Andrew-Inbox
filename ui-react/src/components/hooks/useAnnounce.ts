@@ -13,7 +13,7 @@ export interface Announce {
   is_read: boolean;
 }
 
-export const useAnnounce = () => {
+export const useAnnounce = (refreshKey = 0) => {
   const [ann, setAnn] = useState<Announce[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,7 +34,7 @@ export const useAnnounce = () => {
 
   useEffect(() => {
     fetchAnnouncements();
-  }, []);
+  }, [refreshKey]);
 
   const toggleAnnounce = async (id: string, currentStatus: boolean) => {
     setAnn((prev) =>

@@ -13,7 +13,7 @@ export interface Task {
 }
 
 // Pass the current user's username/ID to the hook
-export const useTasks = (currentUsername?: string) => {
+export const useTasks = (currentUsername?: string, refreshKey = 0) => {
   const [todos, setTodos] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -55,10 +55,10 @@ export const useTasks = (currentUsername?: string) => {
     setLoading(false);
   };
 
-  // Re-fetch whenever the user logs in or changes
+  // Re-fetch whenever the user logs in or changes, or after a sync
   useEffect(() => {
     fetchTasks();
-  }, [currentUsername]);
+  }, [currentUsername, refreshKey]);
 
   const addAssignment = async (
     data: {

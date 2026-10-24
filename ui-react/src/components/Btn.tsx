@@ -3,9 +3,10 @@ import { useBackend } from "./hooks/useBackend";
 
 interface Props {
   username: string | undefined;
+  onSynced?: () => void;
 }
 
-export default function Btn({ username }: Props) {
+export default function Btn({ username, onSynced }: Props) {
   const { executeSync, loading } = useBackend();
 
   const handleAction = async () => {
@@ -13,6 +14,7 @@ export default function Btn({ username }: Props) {
 
     if (result) {
       console.log(result.message);
+      onSynced?.();
     }
   };
 

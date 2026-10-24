@@ -15,6 +15,8 @@ interface Props {
 export default function MainView({ c }: Props) {
   const [activeTab, setActiveTab] = useState<"todo" | "announcements">("todo");
   const [timeFilter, setTimeFilter] = useState("All");
+  // Bumped after each successful sync so pages re-fetch from Supabase
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const handleTabChange = (tab: "todo" | "announcements") => {
     setActiveTab(tab);
@@ -107,7 +109,10 @@ export default function MainView({ c }: Props) {
             </Box>
           </HStack>
 
-          <Btn username={c?.username} />
+          <Btn
+            username={c?.username}
+            onSynced={() => setRefreshKey((k) => k + 1)}
+          />
         </HStack>
       </Box>
 
@@ -125,9 +130,13 @@ export default function MainView({ c }: Props) {
       {/* Content */}
       <Box flex={1} overflowY="auto" px={3} py={3} bg="gray.800">
         {activeTab === "todo" ? (
-          <TasksPage filter={timeFilter} c={c} />
+          <TasksPage filter={timeFilter} c={c} refreshKey={refreshKey} />
         ) : (
-          <AnnoucementPage filter={timeFilter} c={c} />
+          <AnnoucementPage
+            filter={timeFilter}
+            c={c}
+            refreshKey={refreshKey}
+          />
         )}
       </Box>
     </Box>
