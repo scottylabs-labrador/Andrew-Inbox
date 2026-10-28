@@ -1,211 +1,207 @@
-# REQUIRES CANVAS DATA SCRAPE TO BE RUN FIRST TO GET COURSES (change line 1 to match file name))
-import requests, csv
-from time import sleep
-from  datetime import datetime, timezone
-from bs4 import BeautifulSoup
-from selenium import webdriver
-import gradescopeapi.classes._helpers._assignment_helpers as gscope_helpers
+# Scrapes this semester's Gradescope assignments.
+#
+# Gradescope has no API and CMU students log in through Canvas, so:
+#   1. Open ONE Canvas -> Gradescope launch in an invisible Chrome to get logged in.
+#   2. Copy the Gradescope cookies into a normal requests session.
+#   3. Read every course from the Gradescope account page (this also finds
+#      courses that aren't linked from Canvas) and fetch each course page.
 
+import re
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
-sys.path.append(str(Path(__file__).resolve().parents[2]))
+import requests
+from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from gradescopeapi.classes._helpers._assignment_helpers import get_assignments_student_view
+from gradescopeapi.classes._helpers._course_helpers import get_courses_info
 
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 from config import supabase
+from courses import CANVAS_BASE_URL, course_label, course_number, get_active_courses
+
+GRADESCOPE_URL = "https://www.gradescope.com"
+LOGIN_TIMEOUT = 30  # seconds to wait for the Canvas -> Gradescope login
+
+# Gradescope shows "Submitted", a score like "40.5 / 60.0", or a score glued to
+# a lateness note like "3.0 / 4.013 Hours, 17 Minutes Late" for handed-in work,
+# and "No Submission" otherwise.
+SCORE = re.compile(r"^\s*[\d.]+\s*/\s*(\d+(?:\.\d)?)")
+
+
+def is_handed_in(status):
+    status = (status or "").strip().lower()
+    return bool(status) and "no submission" not in status
+
+
+def max_points(a):
+    # The library can't parse late scores, so read the max off the status text
+    if a.max_grade is not None:
+        return a.max_grade
+    match = SCORE.match(a.submissions_status or "")
+    return float(match.group(1)) if match else None
+
+SEASON_ORDER = {"spring": 0, "summer": 1, "fall": 2}
+
 
 # =========================
-# 4. GRADESCOPE LOGIN (IF APPLICABLE)
+# HELPERS
 # =========================
 
-# def write_csv_headers(csvfile, writer):
-#     if csvfile.tell() == 0:  # Only write headers if file is empty
-#         writer.writeheader()
+def normalize(name):
+    return re.sub(r"[^a-z0-9]", "", (name or "").lower())
 
-# def write_assignments_to_csv(gradescope_data):
-#     assignment_dict = [dict((vars(Assignment).items())) for Assignment in gradescope_data]
-#     for a in assignment_dict:
-#         a["course_name"] = course_name
-#         a["course_code"] = course.get("course_code", "---")
-#         a["course_id"] = course_id
-#     fields = assignment_dict[0].keys()
-#     writer = csv.DictWriter(csvfile, fieldnames=fields)
-#     write_csv_headers(csvfile, writer)
-#     writer.writerows(assignment_dict)
 
-# with open('gradescope_data.csv', 'w', newline='') as csvfile:
-def send_gradescope_to_supabase(user_id, CANVAS_TOKEN):
+def term_rank(semester, year):
+    """Sortable key for a Gradescope term like ("Fall", "2026")."""
+    year = int(year) if str(year).isdigit() else 0
+    return (year, SEASON_ORDER.get((semester or "").lower(), -1))
 
-    def get_paginated(url, HEADERS):
-        results = []
-        while url:
-            r = requests.get(url, headers=HEADERS)
-            r.raise_for_status()
-            results.extend(r.json())
-            url = r.links.get("next", {}).get("url")
-        return results
 
-    def get_paginated_session(session, url, HEADERS):
-        sleep(1)  
-        results = []
-        while url:
-            r = session.get(url, headers=HEADERS)
-            r.raise_for_status()
-            results.extend(r.json())
-            url = r.links.get("next", {}).get("url")
-        return results
+def course_name_for(gs_course, canvas_courses):
+    """Save Gradescope courses under the same label as Canvas ("21-241"), so
+    Canvas/Gradescope duplicates line up and the class filter groups them."""
+    number = course_number(gs_course.name, gs_course.full_name)
+    if number:
+        return number
+    # No number on Gradescope: borrow it from the Canvas course with the same name
+    gs_names = {normalize(gs_course.full_name), normalize(gs_course.name)} - {""}
+    for c in canvas_courses:
+        canvas_name = normalize(c.get("name"))
+        if canvas_name and any(canvas_name in gs or gs in canvas_name for gs in gs_names):
+            return course_label(c)
+    return gs_course.full_name or gs_course.name
 
-    def get_active_classes(courses):
-        # Get current time in UTC to match Canvas format
-        curr_date = datetime.now(timezone.utc)
-        active_courses = []
-        for course in courses:
-            term = course.get('term')
-            if not term:
-                continue
-                
-            end_at_str = term.get('end_at')       
-            if end_at_str is None:
-                active_courses.append(course)
-                continue
-            
-            # Convert Canvas string to datetime object
-            # Canvas uses 'Z' for UTC; replace with '+00:00' for older Python versions if needed
-            end_at = datetime.fromisoformat(end_at_str.replace('Z', '+00:00'))        
-            if end_at > curr_date:
-                active_courses.append(course)
-        return active_courses
 
-    def get_class_ext_tools(course_id, CANVAS_BASE_URL, HEADERS):
-        # Access course external tools
-        ext_tools = []
-        try:
-            ext_tools = get_paginated(
-                f"{CANVAS_BASE_URL}/api/v1/courses/{course_id}/external_tools/visible_course_nav_tools", HEADERS)
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 403:
-                # print(f"\n{course_name}")
-                # print("-" * len(course_name))
-                # print(f"External tools access blocked for {course_name}")
-                ext_tools = []  # Skip to the next course
-            else:
-                raise  # Re-raise other HTTP errors
-        return ext_tools
+# =========================
+# GRADESCOPE LOGIN (via Canvas LTI)
+# =========================
 
-    def get_gscope_url(course_id, tool, CANVAS_BASE_URL, HEADERS, session):
-        # Access launch URL for Gradescope
-        launch_url = f"{CANVAS_BASE_URL}/api/v1/courses/{course_id}/external_tools/sessionless_launch?url={tool.get('url', '')}"
-        gscope_url = "";
-        r = session.get(launch_url, headers=HEADERS)
-        if r.status_code == 200:
-            print("Successfully accessed Gradescope launch URL.")
-            gscope_url = r.json().get("url", "")
-        else:
-            print("Failed to access Gradescope launch URL.")
-        return gscope_url
-
-    def load_gscope_cookies(driver, session):
-        for cookie in session.cookies:
-            try:
-                driver.add_cookie({
-                    'name': cookie.name,
-                    'value': cookie.value,
-                })
-            except:
-                pass
-
-    def gscope_login(gscope_url, driver, session, HEADERS):
-        # Pre-load cookies from session before navigating
-        driver.get("https://www.gradescope.com")  # Navigate to domain first
-        load_gscope_cookies(driver, session)  # Load cookies into Selenium session
-
-        driver.get(gscope_url)
-        sleep(5)
-        final_url = driver.current_url
-        print(f"Final URL: {final_url}")
-
-        # Grab cookies from response and use with requests
-        for cookie in driver.get_cookies():
-            session.cookies.set(cookie['name'], cookie['value'])                
-        
-        response = session.get(final_url, headers=HEADERS)
-        print(f"Status: {response.status_code}")
-        return response, driver
-
-    def write_assignments_to_database(user_id, gradescope_data):
-        assignment_dict = [dict((vars(Assignment).items())) for Assignment in gradescope_data]
-        for a in assignment_dict:
-            a["course_name"] = course_name
-            a["course_code"] = course.get("course_code", "---")
-            a["course_id"] = course_id
-            assignment_record = {
-                "course_name": a["course_name"],
-                "assignment_id": f"{user_id} gradescope {a["assignment_id"]}",
-                "assignment_name": a["name"],
-                "due_date": a["due_date"].isoformat() if a["due_date"] else None,
-                "points_possible": a.get("max_grade"),
-                "retrieved_at": datetime.now(timezone.utc).isoformat(),
-                "user_id": user_id,
-                "status": False,
-                "platform": "Gradescope"
-            }
-        # Insert into Supabase
-            print(assignment_record)
-            try:
-                response = supabase.table("assignments_duplicate").upsert(assignment_record,
-                                                                on_conflict="assignment_id",
-                                                                ignore_duplicates=True).execute()
-                # if not response.data:
-                #     print("Supabase insert failed:", response)
-            except Exception as e:
-                print("Supabase insert exception:", e)
-
-    CANVAS_BASE_URL = "https://canvas.cmu.edu"
-    session = requests.Session()
-    canvas_url = f"{CANVAS_BASE_URL}/api/v1/courses?include[]=term"
-    HEADERS = {
-       "Authorization": f"Bearer {CANVAS_TOKEN}"
-       }
-
-    courses = get_paginated_session(session, canvas_url, HEADERS)
-    active_courses = get_active_classes(courses)
-    
-    for course in active_courses:
-        course_id = course["id"]
-        course_name = course.get("name", "Unnamed Course")
-
-        ext_tools = get_class_ext_tools(course_id, CANVAS_BASE_URL, HEADERS)
-        if not ext_tools:
+def find_gradescope_launch_url(canvas_token, canvas_courses):
+    """Find any current Canvas course with Gradescope in the sidebar."""
+    headers = {"Authorization": f"Bearer {canvas_token}"}
+    for course in canvas_courses:
+        r = requests.get(
+            f"{CANVAS_BASE_URL}/api/v1/courses/{course['id']}/external_tools/visible_course_nav_tools",
+            headers=headers,
+        )
+        if r.status_code != 200:
             continue
+        for tool in r.json():
+            if "gradescope" not in tool.get("name", "").lower():
+                continue
+            launch = requests.get(
+                f"{CANVAS_BASE_URL}/api/v1/courses/{course['id']}/external_tools/sessionless_launch",
+                headers=headers,
+                params={"url": tool.get("url", "")},
+            )
+            if launch.status_code == 200 and launch.json().get("url"):
+                print(f"Logging in to Gradescope through {course.get('name')}")
+                return launch.json()["url"]
+    return None
 
-        for tool in ext_tools:
-            if "Gradescope LTI 1.3" in tool.get("name", ""):
-                print(f"\n{course_name}")
-                print("-" * len(course_name))
-                print("Gradescope integration detected. Attempting login...")
 
-                # Access launch URL for Gradescope
-                gscope_url = get_gscope_url(course_id, tool, CANVAS_BASE_URL, HEADERS, session)
-                if not gscope_url:
-                    continue
+def get_gradescope_session(launch_url):
+    """Open the LTI launch in invisible Chrome and copy the login cookies out."""
+    options = Options()
+    options.add_argument("--headless=new")
+    driver = webdriver.Chrome(options=options)
+    try:
+        driver.get(launch_url)
+        # Logged in once Gradescope has handed out its session cookie and we've
+        # landed on a real Gradescope page (not the LTI hand-off).
+        WebDriverWait(driver, LOGIN_TIMEOUT).until(
+            lambda d: "gradescope.com" in d.current_url
+            and "/lti" not in d.current_url
+            and any(c["name"] == "signed_token" for c in d.get_cookies())
+        )
+        session = requests.Session()
+        for c in driver.get_cookies():
+            session.cookies.set(c["name"], c["value"], domain=c.get("domain"))
+        return session
+    finally:
+        driver.quit()
 
-                # Launch Gradescope URL to access grades/assignments
-                r1 = session.get(gscope_url, headers=HEADERS)
-                if r1.status_code == 200:
-                    # Handle redirects and extract final URL after login
-                    driver = webdriver.Chrome()  # Ensure chromedriver is in PATH
-                
-                    response, driver = gscope_login(gscope_url, driver, session, HEADERS)
-                    soup = BeautifulSoup(response.text, 'html.parser')
-                    gradescope_data = gscope_helpers.get_assignments_student_view(soup)
-                    # print(gradescope_data)
 
-                    if gradescope_data != []:
-                        # write_assignments_to_csv(gradescope_data)
-                        write_assignments_to_database(user_id,gradescope_data)
-                    driver.quit()
-                    
-                    
-                else:
-                    print("Failed to access Gradescope URL.")
+# =========================
+# SCRAPE
+# =========================
 
-print("Gradescope data successfully retrieved.")
+def get_gradescope_assignments(canvas_token):
+    """Returns (course_name, Assignment) pairs for this semester's Gradescope courses."""
+    canvas_courses = get_active_courses(canvas_token)
+    launch_url = find_gradescope_launch_url(canvas_token, canvas_courses)
+    if not launch_url:
+        print("No Canvas course links to Gradescope; skipping Gradescope")
+        return []
+
+    session = get_gradescope_session(launch_url)
+
+    account = session.get(f"{GRADESCOPE_URL}/account")
+    account.raise_for_status()
+    courses = get_courses_info(BeautifulSoup(account.text, "html.parser"))["student"]
+    if not courses:
+        print("No Gradescope student courses found")
+        return []
+
+    latest = max(term_rank(c.semester, c.year) for c in courses.values())
+    current = {cid: c for cid, c in courses.items() if term_rank(c.semester, c.year) == latest}
+    print(f"Found {len(current)} Gradescope courses this semester")
+
+    results = []
+    for course_id, course in current.items():
+        page = session.get(f"{GRADESCOPE_URL}/courses/{course_id}")
+        if page.status_code != 200:
+            print(f"Skipping Gradescope course {course.name}: HTTP {page.status_code}")
+            continue
+        assignments = get_assignments_student_view(BeautifulSoup(page.text, "html.parser"))
+        course_name = course_name_for(course, canvas_courses)
+        print(f"{course_name}: {len(assignments)} Gradescope assignments")
+        results.extend((course_name, a) for a in assignments)
+    return results
+
+
+def send_gradescope_to_supabase(user_id, CANVAS_TOKEN):
+    assignments = get_gradescope_assignments(CANVAS_TOKEN)
+
+    # Keep whatever the user already checked off; the upsert below would reset it
+    existing = (
+        supabase.table("assignments_duplicate")
+        .select("assignment_id, status")
+        .eq("user_id", user_id)
+        .eq("platform", "Gradescope")
+        .execute()
+    )
+    checked_ids = {row["assignment_id"] for row in (existing.data or []) if row.get("status")}
+
+    records = []
+    for course_name, a in assignments:
+        # Closed past assignments have no dates on Gradescope's page; nothing to do
+        if not a.assignment_id or not a.due_date:
+            continue
+        assignment_id = f"{user_id} gradescope {a.assignment_id}"
+        handed_in = is_handed_in(a.submissions_status)
+        records.append({
+            "course_name": course_name,
+            "assignment_id": assignment_id,
+            "assignment_name": a.name,
+            "due_date": a.due_date.isoformat(),
+            "points_possible": max_points(a),
+            "retrieved_at": datetime.now(timezone.utc).isoformat(),
+            "user_id": user_id,
+            "status": handed_in or assignment_id in checked_ids,
+            "platform": "Gradescope",
+        })
+
+    if records:
+        supabase.table("assignments_duplicate").upsert(records, on_conflict="assignment_id").execute()
+
+    # The old scraper also saved undated rows (in-class quizzes/exams), which the
+    # inbox showed as due today
+    supabase.table("assignments_duplicate").delete().eq("user_id", user_id).eq(
+        "platform", "Gradescope"
+    ).is_("due_date", "null").execute()
+    print(f"Saved {len(records)} Gradescope assignments")

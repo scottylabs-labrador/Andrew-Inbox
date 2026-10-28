@@ -12,16 +12,15 @@ export interface Task {
   userId: string;
 }
 
-// Pass the current user's username/ID to the hook
-export const useTasks = (currentUsername?: string) => {
+// Pass the signed-in user's id to the hook
+export const useTasks = (currentUsername?: string, refreshKey = 0) => {
   const [todos, setTodos] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const parseLocalDatePicker = (dateStr: string | null | undefined) => {
-    if (!dateStr) return new Date();
-    const dateOnly = dateStr.split("T")[0];
-    return new Date(dateOnly.replace(/-/g, "/"));
-  };
+  // Keep the full timestamp. Cutting it to the date part used the UTC date, so
+  // 11:59 PM Eastern (03:59 UTC the next day) showed up as due tomorrow.
+  const parseDueDate = (dateStr: string | null | undefined) =>
+    dateStr ? new Date(dateStr) : new Date();
 
   const fetchTasks = async () => {
     if (!currentUsername) {
@@ -44,7 +43,7 @@ export const useTasks = (currentUsername?: string) => {
         id: row.assignment_id || `temp-${Math.random()}`,
         assignment: row.assignment_name,
         course: row.course_name,
-        due: parseLocalDatePicker(row.due_date),
+        due: parseDueDate(row.due_date),
         status: row.status || false,
         points: row.points_possible,
         platform: row.platform,
@@ -55,10 +54,10 @@ export const useTasks = (currentUsername?: string) => {
     setLoading(false);
   };
 
-  // Re-fetch whenever the user logs in or changes
+  // Re-fetch whenever the user logs in or changes, or after a sync
   useEffect(() => {
     fetchTasks();
-  }, [currentUsername]);
+  }, [currentUsername, refreshKey]);
 
   const addAssignment = async (
     data: {
@@ -74,8 +73,8 @@ export const useTasks = (currentUsername?: string) => {
       ? crypto.randomUUID()
       : (Date.now() + Math.random()).toString();
 
-    const localDate = new Date(data.due.replace(/-/g, "/"));
-    const isoDate = localDate.toISOString();
+    // The form gives "YYYY-MM-DD"; treat hand-added work as due 11:59 PM that day
+    const isoDate = new Date(`${data.due}T23:59:00`).toISOString();
 
     const { data: insertedData, error } = await supabase
       .from("assignments_duplicate")
@@ -102,7 +101,7 @@ export const useTasks = (currentUsername?: string) => {
         id: newRow.assignment_id,
         assignment: newRow.assignment_name,
         course: newRow.course_name,
-        due: parseLocalDatePicker(newRow.due_date),
+        due: parseDueDate(newRow.due_date),
         status: newRow.status,
         points: newRow.points_possible,
         platform: newRow.platform,

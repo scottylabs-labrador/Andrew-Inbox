@@ -1,5 +1,6 @@
 import { Box, Text, HStack, Badge, Flex } from "@chakra-ui/react";
 import type { Task } from "../hooks/useTasks";
+import { isOverdue as isPastDue } from "@/dates";
 
 interface TaskCardProps {
   taskd: Task;
@@ -7,21 +8,14 @@ interface TaskCardProps {
 }
 
 export default function TaskCard({ taskd, onToggle }: TaskCardProps) {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const isOverdue = isPastDue(taskd.due, taskd.status);
 
-  const taskDate = new Date(
-    taskd.due.getFullYear(),
-    taskd.due.getMonth(),
-    taskd.due.getDate(),
-  );
-
-  const isOverdue = taskDate < today && !taskd.status;
-
-  const formattedDate = taskd.due.toLocaleDateString("en-US", {
+  // e.g. "Oct 28, 11:59 PM", in the user's own timezone
+  const formattedDate = taskd.due.toLocaleString("en-US", {
     month: "short",
     day: "numeric",
-    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
   });
 
   return (

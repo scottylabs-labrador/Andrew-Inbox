@@ -1,18 +1,24 @@
 import { useState } from "react";
+import { BACKEND_URL } from "@/config";
+import { supabase } from "@/supabaseClient";
 
 export const useBackend = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const executeSync = async (userId: string) => {
+  const executeSync = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch("http://localhost:8000/sync", {
+      // The backend works out who you are from your sign-in session.
+      const { data } = await supabase.auth.getSession();
+      const accessToken = data.session?.access_token;
+      if (!accessToken) throw new Error("Please sign in again.");
+
+      const response = await fetch(`${BACKEND_URL}/sync`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: userId }),
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
 
       if (!response.ok) {
@@ -20,8 +26,8 @@ export const useBackend = () => {
         throw new Error(errorData.detail || `Sync failed: ${response.status}`);
       }
 
-      const data = await response.json();
-      return data;
+      const result = await response.json();
+      return result;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
       setError(message);

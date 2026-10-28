@@ -1,20 +1,29 @@
-import { Box, HStack, Text, Image } from "@chakra-ui/react";
+import { Box, HStack, Text, Image, IconButton } from "@chakra-ui/react";
 import { useState } from "react";
+import { LuSettings } from "react-icons/lu";
 import TimeToggle from "./TimeToggle";
 import TasksPage from "./Task/TasksPage";
 import AnnoucementPage from "./Announcement/AnnoucementPage";
 import todoicon from "../assets/todo.png";
 import annicon from "../assets/ann.png";
 import Btn from "./Btn";
+import CourseFilter from "./CourseFilter";
+import { useCourses } from "./hooks/useCourses";
 import type { Creds } from "@/App";
 
 interface Props {
   c: Creds | null;
+  onEditToken: () => void;
 }
 
-export default function MainView({ c }: Props) {
+export default function MainView({ c, onEditToken }: Props) {
   const [activeTab, setActiveTab] = useState<"todo" | "announcements">("todo");
   const [timeFilter, setTimeFilter] = useState("All");
+  // Bumped after each successful sync so pages re-fetch from Supabase
+  const [refreshKey, setRefreshKey] = useState(0);
+  // null = all classes; kept when switching tabs
+  const [courseFilter, setCourseFilter] = useState<string | null>(null);
+  const courses = useCourses(c?.userId, refreshKey);
 
   const handleTabChange = (tab: "todo" | "announcements") => {
     setActiveTab(tab);
@@ -37,7 +46,7 @@ export default function MainView({ c }: Props) {
             {/* To-do tab */}
             <Box
               cursor="pointer"
-              px={4}
+              px={3}
               py={2}
               bg={activeTab === "todo" ? "gray.800" : "gray.900"}
               borderTopRadius="lg"
@@ -72,7 +81,7 @@ export default function MainView({ c }: Props) {
 
             <Box
               cursor="pointer"
-              px={4}
+              px={3}
               py={2}
               bg={activeTab === "announcements" ? "gray.800" : "gray.900"}
               borderTopRadius="lg"
@@ -107,7 +116,22 @@ export default function MainView({ c }: Props) {
             </Box>
           </HStack>
 
-          <Btn username={c?.username} />
+          <HStack gap={1}>
+            <Btn onSynced={() => setRefreshKey((k) => k + 1)} />
+            <Box pb={2}>
+              <IconButton
+                size="xs"
+                variant="ghost"
+                color="gray.400"
+                aria-label="Settings"
+                title="Canvas token & sign out"
+                onClick={onEditToken}
+                _hover={{ bg: "gray.700", color: "white" }}
+              >
+                <LuSettings />
+              </IconButton>
+            </Box>
+          </HStack>
         </HStack>
       </Box>
 
@@ -120,14 +144,31 @@ export default function MainView({ c }: Props) {
         borderColor="gray.700"
       >
         <TimeToggle selected={timeFilter} setSelected={setTimeFilter} />
+        <Box mt={2}>
+          <CourseFilter
+            courses={courses}
+            selected={courseFilter}
+            setSelected={setCourseFilter}
+          />
+        </Box>
       </Box>
 
       {/* Content */}
       <Box flex={1} overflowY="auto" px={3} py={3} bg="gray.800">
         {activeTab === "todo" ? (
-          <TasksPage filter={timeFilter} c={c} />
+          <TasksPage
+            filter={timeFilter}
+            courseFilter={courseFilter}
+            c={c}
+            refreshKey={refreshKey}
+          />
         ) : (
-          <AnnoucementPage filter={timeFilter} c={c} />
+          <AnnoucementPage
+            filter={timeFilter}
+            courseFilter={courseFilter}
+            c={c}
+            refreshKey={refreshKey}
+          />
         )}
       </Box>
     </Box>
