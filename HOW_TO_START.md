@@ -29,6 +29,12 @@ Put it **directly inside** the folder from Step 1, next to `start-backend.bat`. 
 4. Open the project folder, select the **`andrew-inbox-extension`** folder inside it, and click **Select Folder**.
 5. Click the puzzle-piece icon in Chrome's toolbar and pin **Andrew Inbox**.
 
+This works the same in other Chromium browsers: Edge (`edge://extensions`), Brave (`brave://extensions`), Arc, Opera and Vivaldi.
+
+> **Using Firefox instead?** Go to `about:debugging` → **This Firefox** → **Load Temporary Add-on…**, open the `andrew-inbox-extension` folder, and pick **`manifest.json`**. Firefox removes temporary add-ons when it closes, so you redo this each time you open Firefox. You still need Google Chrome installed, because the backend uses it to read Gradescope and Piazza.
+>
+> **Safari** isn't supported yet. It needs the extension wrapped in a Mac app with Xcode.
+
 ## Step 4: Start the backend
 
 The backend is the part that fetches your assignments.
