@@ -11,6 +11,7 @@ from canvas import send_canvas_to_supabase
 from piazza.piazza_to_supabase import send_piazza_to_supabase
 from gradescope import send_gradescope_to_supabase
 from dedupe import remove_cross_platform_duplicates
+from retention import delete_stale_assignments
 import os   
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,7 +29,7 @@ from config import supabase
 READY_MESSAGE = """
 ==============================================================
   DONE! The backend is running and the extension works now.
-  Open Andrew Inbox in Chrome and press Scrape.
+  Open Andrew Inbox in Chrome; it fetches your classes by itself.
   Keep this window open while you use it (close it to stop).
 ==============================================================
 """
@@ -86,6 +87,7 @@ def sync_supabase(user_id):
     send_piazza_to_supabase(user_id, CANVAS_API_KEY)
     send_gradescope_to_supabase(user_id, CANVAS_API_KEY)
     remove_cross_platform_duplicates(user_id)
+    delete_stale_assignments(user_id)
     print("FINISHED SYNC")
 
 

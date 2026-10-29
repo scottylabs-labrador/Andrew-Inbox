@@ -57,7 +57,7 @@ The first time, it installs what it needs, which takes a few minutes. It's ready
 2. It asks for a **Canvas access token**:
    - Go to [canvas.cmu.edu](https://canvas.cmu.edu) → **Account** → **Settings** → **Approved Integrations** → **+ New Access Token**.
    - Name it "Andrew Inbox", click **Generate Token**, copy the long code (it starts with numbers and a `~`), paste it, and click **Save Token**.
-3. Click **Scrape**. The first scrape takes a minute or two. Your assignments and announcements show up when it's done.
+3. Andrew Inbox fetches your assignments and announcements by itself. The first fetch takes a minute or two. After that it updates by itself every 7 days when you open it, or click **Fetch** to update sooner.
 
 **Next time,** just do Step 4 (start the backend) and click the extension. Steps 1–3 and 5 are one-time.
 
@@ -73,5 +73,5 @@ The first time, it installs what it needs, which takes a few minutes. It's ready
 | The `start-backend.bat` window flashes and closes | Open Command Prompt, drag `start-backend.bat` into it, press Enter, and send Arav the error. |
 | Mac: **permission denied** | Run `chmod +x start-backend.sh` once, then `./start-backend.sh` again. |
 | Popup just shows a spinning circle | You're offline. Connect to the internet and reopen the popup. |
-| **Scrape** button turns red | The backend isn't running. Do Step 4 and keep the window open. Hover over the button to see the exact error. |
+| **Fetch** button turns red | The backend isn't running. Do Step 4 and keep the window open. Hover over the button to see the exact error. |
 | **"Wrong Andrew ID or password"** | Check both, or use **Forgot password?** on the sign-in screen. |

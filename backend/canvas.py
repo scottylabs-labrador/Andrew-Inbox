@@ -12,6 +12,7 @@ from supabase import create_client, Client
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from config import supabase
 from courses import course_label, get_active_courses
+from retention import worth_saving
 
 def send_canvas_to_supabase(user_id, CANVAS_TOKEN):
    
@@ -106,6 +107,9 @@ def send_canvas_to_supabase(user_id, CANVAS_TOKEN):
                "status": handed_in(a) or f"{user_id} canvas {a["id"]}" in done_ids,
                "platform": "Canvas"
            })
+
+       # Skip finished work over a month old and anything from long ago
+       records = [r for r in records if worth_saving(r["due_date"], r["status"])]
 
        # One request per course instead of one per assignment
        if records:

@@ -1,119 +1,90 @@
-import { Box, Center, Dialog, HStack, Spinner, VStack } from "@chakra-ui/react";
-import { useAnnounce, type Announce } from "../hooks/useAnnounce";
+import { Box, Center, Dialog, Spinner, Text, VStack } from "@chakra-ui/react";
+import type { Announce } from "../hooks/useAnnounce";
 import AnnouncementCard from "./AnnouncementCard";
 import AnnoucementOpen from "./AnnouncementOpen";
 import { useState } from "react";
-import type { Creds } from "@/App";
-import { isPostedInWindow } from "@/dates";
+import { ANNOUNCEMENT_DAYS } from "@/dates";
 
 interface Props {
-  filter: string;
-  courseFilter: string | null;
-  c: Creds | null;
-  refreshKey: number;
+  // Already narrowed to this user, the last week and the class filter
+  ann: Announce[];
+  loading: boolean;
+  toggleAnnounce: (id: string, currentStatus: boolean) => void;
 }
 
-const emptyMessages: Record<string, string> = {
-  All: "No announcements yet!",
-  Day: "Nothing posted today!",
-  Week: "Nothing in the last 7 days!",
-  Month: "Nothing in the last 30 days!",
-};
-
-export default function AnnoucementPage({
-  filter,
-  courseFilter,
-  c,
-  refreshKey,
-}: Props) {
-  const { ann, loading, toggleAnnounce } = useAnnounce(refreshKey);
-  const [selectedAnn, setSelectedAnn] = useState<Announce | null>(null);
-
-  const handleToggle = (id: string, currentStatus: boolean) => {
-    toggleAnnounce(id, currentStatus);
-    setSelectedAnn(null);
-  };
+export default function AnnoucementPage({ ann, loading, toggleAnnounce }: Props) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedAnn = ann.find((a) => a.announcement_id === selectedId) ?? null;
 
   if (loading) {
     return (
       <Center h="200px">
-        <HStack>
-          <p> Loading </p>
-          <Spinner color="blue.500" />
-        </HStack>
+        <Spinner color="brand.solid" />
       </Center>
     );
   }
 
-  const filteredAnn = ann.filter(
-    (a) =>
-      a.user_id === c?.userId &&
-      (!courseFilter || a.course === courseFilter) &&
-      isPostedInWindow(new Date(a.date), filter),
-  );
-
-  const sortedAnn = [...filteredAnn].sort(
+  const sortedAnn = [...ann].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
 
   return (
     <>
+      <VStack gap={2} align="stretch">
+        {sortedAnn.length > 0 ? (
+          sortedAnn.map((item) => (
+            <Box
+              as="button"
+              textAlign="left"
+              key={item.announcement_id}
+              w="100%"
+              onClick={() => {
+                setSelectedId(item.announcement_id);
+                if (!item.is_read) {
+                  toggleAnnounce(item.announcement_id, item.is_read);
+                }
+              }}
+              cursor="pointer"
+            >
+              <AnnouncementCard ann={item} />
+            </Box>
+          ))
+        ) : (
+          <Center py={10}>
+            <Text color="fg.muted" fontSize="sm" textAlign="center">
+              No announcements in the last {ANNOUNCEMENT_DAYS} days!
+            </Text>
+          </Center>
+        )}
+      </VStack>
+
       <Dialog.Root
         size="sm"
         placement="center"
         open={!!selectedAnn}
         onOpenChange={(details) => {
-          if (!details.open) setSelectedAnn(null);
+          if (!details.open) setSelectedId(null);
         }}
       >
-        <VStack gap={2}>
-          {sortedAnn.length > 0 ? (
-            sortedAnn.map((item) => (
-              <Box
-                key={item.announcement_id}
-                w="100%"
-                onClick={() => {
-                  setSelectedAnn(item);
-                  if (!item.is_read) {
-                    toggleAnnounce(item.announcement_id, item.is_read);
-                  }
-                }}
-                cursor="pointer"
-              >
-                <AnnouncementCard ann={item} />
-              </Box>
-            ))
-          ) : (
-            <Center py={10} flexDirection="column">
-              <p style={{ color: "gray", textAlign: "center" }}>
-                {emptyMessages[filter] || emptyMessages.All}
-              </p>
-            </Center>
-          )}
-        </VStack>
-
-        <Dialog.Backdrop />
-        <Dialog.Positioner
-          position="absolute"
-          top="0"
-          left="0"
-          width="100%"
-          height="100%"
-        >
+        <Dialog.Backdrop bg="rgba(10,7,7,.72)" />
+        <Dialog.Positioner>
           <Dialog.Content
-            bg="gray.700"
-            border="1px solid"
-            borderColor="gray.600"
-            mx="4"
-            borderRadius="lg"
-            boxShadow="0 10px 30px rgba(0,0,0,0.5)"
+            // The popup is only 400px wide: leave a 16px gutter each side
+            w="calc(100% - 32px)"
+            mx="auto"
+            bg="bg.panel"
+            borderWidth="1px"
+            borderColor="border"
+            borderRadius="14px"
+            boxShadow="0 24px 48px -12px rgba(0,0,0,.6)"
           >
             {selectedAnn && (
               <AnnoucementOpen
                 a={selectedAnn}
-                onToggle={() =>
-                  handleToggle(selectedAnn.announcement_id, selectedAnn.is_read)
-                }
+                onMarkUnread={() => {
+                  toggleAnnounce(selectedAnn.announcement_id, true);
+                  setSelectedId(null);
+                }}
               />
             )}
           </Dialog.Content>

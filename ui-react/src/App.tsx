@@ -1,6 +1,5 @@
 import "./App.css";
-import { Box, Center, Spinner } from "@chakra-ui/react";
-import { useState } from "react";
+import { Box, Center, Spinner, Text, VStack } from "@chakra-ui/react";
 import MainView from "./components/MainView";
 import LoginPage from "./components/Login";
 import CanvasTokenPage from "./components/CanvasTokenPage";
@@ -23,18 +22,22 @@ function App() {
     signOut,
     saveCanvasToken,
   } = useAuth();
-  const [editingToken, setEditingToken] = useState(false);
-
-  const handleSignOut = async () => {
-    setEditingToken(false);
-    await signOut();
-  };
 
   let page;
   if (loading) {
     page = (
-      <Center w="360px" h="600px" bg="gray.800">
-        <Spinner color="blue.500" />
+      <Center w="400px" h="600px" bg="bg">
+        {navigator.onLine ? (
+          <Spinner color="brand.solid" />
+        ) : (
+          // Supabase can't be reached, so sign-in would spin forever
+          <VStack gap={1} px={8} textAlign="center">
+            <Text fontWeight="semibold">You're offline</Text>
+            <Text fontSize="sm" color="fg.muted">
+              Connect to the internet, then reopen Andrew Inbox.
+            </Text>
+          </VStack>
+        )}
       </Center>
     );
   } else if (!profile || recovering) {
@@ -46,32 +49,26 @@ function App() {
         resetPassword={resetPassword}
       />
     );
-  } else if (!profile.hasCanvasToken || editingToken) {
+  } else if (!profile.hasCanvasToken) {
     page = (
       <CanvasTokenPage
         username={profile.username}
-        hasToken={profile.hasCanvasToken}
         saveCanvasToken={saveCanvasToken}
-        onDone={() => setEditingToken(false)}
-        onSignOut={handleSignOut}
+        onSignOut={signOut}
       />
     );
   } else {
     page = (
       <MainView
         c={{ userId: profile.userId, username: profile.username }}
-        onEditToken={() => setEditingToken(true)}
+        saveCanvasToken={saveCanvasToken}
+        onSignOut={signOut}
       />
     );
   }
 
   return (
-    <Box
-      overflow="hidden"
-      boxShadow="0 8px 32px rgba(0,0,0,0.5)"
-      display="inline-block"
-      position="relative"
-    >
+    <Box overflow="hidden" display="inline-block" position="relative">
       {page}
     </Box>
   );

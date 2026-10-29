@@ -41,3 +41,37 @@ export function isPostedInWindow(posted: Date, filter: string, now = new Date())
 
 export const isOverdue = (due: Date, done: boolean, now = new Date()) =>
   !done && due < now;
+
+// Finished work drops off the list (and out of the database) after this long
+export const KEEP_DONE_DAYS = 30;
+
+// Announcements only cover the last week (Piazza is scraped 7 days back)
+export const ANNOUNCEMENT_DAYS = 7;
+
+// Hides leftovers from past semesters. Spring: Dec 21 - Jun 7,
+// summer: Jun 8 - Aug 24, fall: Aug 25 - Dec 20.
+export function getSemesterRange(now = new Date()) {
+  const year = now.getFullYear();
+  if (now >= new Date(year, 11, 21) || now < new Date(year, 5, 8)) {
+    const startYear = now.getMonth() === 11 ? year : year - 1;
+    return {
+      start: new Date(startYear, 11, 21),
+      end: new Date(startYear + 1, 5, 8),
+    };
+  }
+  if (now < new Date(year, 7, 25)) {
+    return { start: new Date(year, 5, 8), end: new Date(year, 7, 25) };
+  }
+  return { start: new Date(year, 7, 25), end: new Date(year, 11, 21) };
+}
+
+// "just now", "5 minutes ago", "3 days ago"
+export function timeAgo(date: Date, now = new Date()) {
+  const minutes = Math.round((now.getTime() - date.getTime()) / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  const days = Math.round(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+}

@@ -50,6 +50,10 @@ def is_current_course(course, now):
     start = parse_canvas_date(term.get("start_at")) or parse_canvas_date(course.get("start_at"))
     end = parse_canvas_date(term.get("end_at")) or parse_canvas_date(course.get("end_at"))
 
+    # No dates anywhere means it's an organization page (orientation, class
+    # pages like "CIT Class of 2029", clubs), not a class
+    if not start and not end:
+        return False
     if end and end < now:
         return False
     if start and start > now + UPCOMING_TERM_WINDOW:

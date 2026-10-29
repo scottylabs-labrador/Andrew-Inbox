@@ -22,6 +22,7 @@ from gradescopeapi.classes._helpers._course_helpers import get_courses_info
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from config import supabase
 from courses import CANVAS_BASE_URL, course_label, course_number, get_active_courses
+from retention import worth_saving
 
 GRADESCOPE_URL = "https://www.gradescope.com"
 LOGIN_TIMEOUT = 30  # seconds to wait for the Canvas -> Gradescope login
@@ -195,6 +196,9 @@ def send_gradescope_to_supabase(user_id, CANVAS_TOKEN):
             "status": handed_in or assignment_id in checked_ids,
             "platform": "Gradescope",
         })
+
+    # Skip finished work over a month old and anything from long ago
+    records = [r for r in records if worth_saving(r["due_date"], r["status"])]
 
     if records:
         supabase.table("assignments_duplicate").upsert(records, on_conflict="assignment_id").execute()

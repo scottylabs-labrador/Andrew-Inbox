@@ -50,7 +50,7 @@ This updates the `andrew-inbox-extension/` folder (and also makes `andrew-inbox-
 - **First time only:** go to `chrome://extensions`, turn on **Developer mode**, click **Load unpacked**, and pick the `andrew-inbox-extension` folder.
 - **Every time after:** just click **↻** on the Andrew Inbox card. You don't need to delete or re-add anything.
 
-**3. Start the backend** (needed only for **Scrape**):
+**3. Start the backend** (needed only for **Fetch**, which also runs by itself every 7 days):
 
 - **Windows:** double-click `start-backend.bat`
 - **macOS / Linux:** `./start-backend.sh`
@@ -66,5 +66,5 @@ It's ready when it prints `Uvicorn running on http://127.0.0.1:8000`. Keep that 
 | Popup is blank / old | Run `npm run extension` again, then click ↻. |
 | Reset code email never arrives | Custom SMTP isn't set up, or the email went to spam. See "Supabase project", step 3. |
 | **"That code is wrong or has expired"** | Click "Send another code" and use the newest email. Codes expire after an hour. |
-| Scrape button turns red | The backend isn't running. Start it (step 3). |
+| Fetch button turns red | The backend isn't running. Start it (step 3). |
 | Port 8000 already in use | Another backend window is open. Close it. |

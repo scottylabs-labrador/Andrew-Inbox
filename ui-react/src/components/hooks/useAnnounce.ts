@@ -1,6 +1,14 @@
 import { supabase } from "@/supabaseClient";
 import { useState, useEffect } from "react";
 
+// Shown with each opened announcement, since the descriptions are LLM summaries
+export const AI_NOTE =
+  "Summaries are AI-generated and may miss details. Open the original post to be sure.";
+
+// "piazza" -> "Piazza"
+export const platformName = (platform: string) =>
+  platform ? platform[0].toUpperCase() + platform.slice(1) : "";
+
 export interface Announce {
   announcement_id: string;
   user_id: string;

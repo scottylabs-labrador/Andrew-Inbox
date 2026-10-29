@@ -1,5 +1,6 @@
 import { supabase } from "@/supabaseClient";
 import { useState, useEffect } from "react";
+import { KEEP_DONE_DAYS, addDays } from "@/dates";
 
 export interface Task {
   id: string;
@@ -11,6 +12,10 @@ export interface Task {
   platform: string | null;
   userId: string;
 }
+
+// "YYYY-MM-DD" from the task form -> 11:59 PM that day in the user's timezone
+export const endOfDayIso = (day: string) =>
+  new Date(`${day}T23:59:00`).toISOString();
 
 // Pass the signed-in user's id to the hook
 export const useTasks = (currentUsername?: string, refreshKey = 0) => {
@@ -49,7 +54,23 @@ export const useTasks = (currentUsername?: string, refreshKey = 0) => {
         platform: row.platform,
         userId: row.user_id,
       }));
-      setTodos(hydratedData);
+      // Finished work more than a month old is dropped from the list and the
+      // database (the backend skips re-saving it on the next fetch).
+      const cutoff = addDays(new Date(), -KEEP_DONE_DAYS);
+      const stale = hydratedData.filter((t) => t.status && t.due < cutoff);
+      if (stale.length) {
+        supabase
+          .from("assignments_duplicate")
+          .delete()
+          .in(
+            "assignment_id",
+            stale.map((t) => t.id),
+          )
+          .then(({ error: deleteError }) => {
+            if (deleteError) console.error("Cleanup error:", deleteError);
+          });
+      }
+      setTodos(hydratedData.filter((t) => !stale.includes(t)));
     }
     setLoading(false);
   };
@@ -74,7 +95,7 @@ export const useTasks = (currentUsername?: string, refreshKey = 0) => {
       : (Date.now() + Math.random()).toString();
 
     // The form gives "YYYY-MM-DD"; treat hand-added work as due 11:59 PM that day
-    const isoDate = new Date(`${data.due}T23:59:00`).toISOString();
+    const isoDate = endOfDayIso(data.due);
 
     const { data: insertedData, error } = await supabase
       .from("assignments_duplicate")
@@ -156,12 +177,22 @@ export const useTasks = (currentUsername?: string, refreshKey = 0) => {
     }
   };
 
+  const deleteAssignment = async (id: string) => {
+    const { error } = await supabase
+      .from("assignments_duplicate")
+      .delete()
+      .eq("assignment_id", id);
+    if (error) console.error("Delete error:", error);
+    else setTodos((prev) => prev.filter((t) => t.id !== id));
+  };
+
   return {
     todos,
     loading,
     addAssignment,
     toggleAssignment,
     updateAssignment,
+    deleteAssignment,
     fetchTasks,
   };
 };

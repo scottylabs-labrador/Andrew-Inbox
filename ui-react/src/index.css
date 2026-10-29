@@ -1,0 +1,8 @@
+
+/* Native dropdowns (class filter, date pickers) follow light/dark mode too */
+.light {
+  color-scheme: light;
+}
+.dark {
+  color-scheme: dark;
+}

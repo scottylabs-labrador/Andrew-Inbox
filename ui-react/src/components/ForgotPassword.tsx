@@ -48,17 +48,13 @@ const labelProps = {
   display: "block",
   fontSize: "xs",
   fontWeight: "bold",
-  color: "gray.400",
+  color: "fg.muted",
   mb: 1,
   textTransform: "uppercase" as const,
 };
 
 const inputProps = {
-  bg: "gray.900",
-  border: "none",
   fontSize: "sm",
-  color: "white",
-  _focus: { ring: "1px", ringColor: "blue.400" },
 };
 
 export default function ForgotPassword({
@@ -94,13 +90,13 @@ export default function ForgotPassword({
     <VStack gap={5} w="100%" align="stretch">
       {message && (
         <Box
-          bg="red.900/40"
+          bg="red.subtle"
           p={2}
           borderRadius="md"
           border="1px solid"
-          borderColor="red.500"
+          borderColor="red.muted"
         >
-          <Text color="red.200" fontSize="xs" textAlign="center">
+          <Text color="red.fg" fontSize="xs" textAlign="center">
             {message}
           </Text>
         </Box>
@@ -112,7 +108,7 @@ export default function ForgotPassword({
           onSubmit={requestForm.handleSubmit(onRequest)}
         >
           <VStack gap={5} w="100%" align="stretch">
-            <Text fontSize="xs" color="gray.400" textAlign="center">
+            <Text fontSize="xs" color="fg.muted" textAlign="center">
               We'll email a reset code to your @andrew.cmu.edu address.
             </Text>
             <Box>
@@ -125,7 +121,7 @@ export default function ForgotPassword({
                 disabled={requestForm.formState.isSubmitting}
               />
               {requestForm.formState.errors.andrewId && (
-                <Text color="red.400" fontSize="xs" mt={1}>
+                <Text color="red.fg" fontSize="xs" mt={1}>
                   {requestForm.formState.errors.andrewId.message}
                 </Text>
               )}
@@ -133,10 +129,8 @@ export default function ForgotPassword({
             <Button
               type="submit"
               w="100%"
-              bg="blue.500"
-              color="white"
+              colorPalette="brand"
               loading={requestForm.formState.isSubmitting}
-              _hover={{ bg: "blue.400" }}
               borderRadius="lg"
               size="md"
             >
@@ -150,7 +144,7 @@ export default function ForgotPassword({
           onSubmit={resetForm.handleSubmit(onReset)}
         >
           <VStack gap={4} w="100%" align="stretch">
-            <Text fontSize="xs" color="gray.400" textAlign="center">
+            <Text fontSize="xs" color="fg.muted" textAlign="center">
               Check {andrewId}@andrew.cmu.edu for a code (it can take a minute
               and may land in spam).
             </Text>
@@ -165,7 +159,7 @@ export default function ForgotPassword({
                 disabled={resetForm.formState.isSubmitting}
               />
               {resetForm.formState.errors.code && (
-                <Text color="red.400" fontSize="xs" mt={1}>
+                <Text color="red.fg" fontSize="xs" mt={1}>
                   {resetForm.formState.errors.code.message}
                 </Text>
               )}
@@ -181,7 +175,7 @@ export default function ForgotPassword({
                 disabled={resetForm.formState.isSubmitting}
               />
               {resetForm.formState.errors.password && (
-                <Text color="red.400" fontSize="xs" mt={1}>
+                <Text color="red.fg" fontSize="xs" mt={1}>
                   {resetForm.formState.errors.password.message}
                 </Text>
               )}
@@ -196,7 +190,7 @@ export default function ForgotPassword({
                 disabled={resetForm.formState.isSubmitting}
               />
               {resetForm.formState.errors.confirm && (
-                <Text color="red.400" fontSize="xs" mt={1}>
+                <Text color="red.fg" fontSize="xs" mt={1}>
                   {resetForm.formState.errors.confirm.message}
                 </Text>
               )}
@@ -204,10 +198,8 @@ export default function ForgotPassword({
             <Button
               type="submit"
               w="100%"
-              bg="blue.500"
-              color="white"
+              colorPalette="brand"
               loading={resetForm.formState.isSubmitting}
-              _hover={{ bg: "blue.400" }}
               borderRadius="lg"
               size="md"
             >
@@ -215,10 +207,10 @@ export default function ForgotPassword({
             </Button>
             <Text
               fontSize="xs"
-              color="blue.400"
+              color="brand.fg"
               textAlign="center"
               cursor="pointer"
-              _hover={{ color: "blue.300", textDecoration: "underline" }}
+              _hover={{ textDecoration: "underline" }}
               onClick={() => {
                 setMessage(null);
                 setAndrewId(null);
@@ -232,10 +224,10 @@ export default function ForgotPassword({
 
       <Text
         fontSize="xs"
-        color="gray.400"
+        color="fg.muted"
         textAlign="center"
         cursor="pointer"
-        _hover={{ color: "white", textDecoration: "underline" }}
+        _hover={{ color: "fg", textDecoration: "underline" }}
         onClick={onBack}
       >
         Back to sign in

@@ -1,38 +1,34 @@
-import { Box, Button } from "@chakra-ui/react";
-import { useBackend } from "./hooks/useBackend";
+import { Button } from "@chakra-ui/react";
+import { LuRefreshCw } from "react-icons/lu";
 
 interface Props {
-  onSynced?: () => void;
+  loading: boolean;
+  error: string | null;
+  onFetch: () => void;
 }
 
-export default function Btn({ onSynced }: Props) {
-  const { executeSync, loading, error } = useBackend();
-
-  const handleAction = async () => {
-    const result = await executeSync();
-
-    if (result) {
-      console.log(result.message);
-      onSynced?.();
-    }
-  };
-
+// "Fetch" because Scotty is a dog. Also runs by itself every 7 days.
+export default function Btn({ loading, error, onFetch }: Props) {
   return (
-    <Box pb={2}>
-      <Button
-        size="xs"
-        colorScheme="blue"
-        variant="outline"
-        loadingText="Scraping"
-        onClick={handleAction}
-        fontSize="xs"
-        borderRadius="md"
-        borderColor={error ? "red.400" : undefined}
-        title={error ?? undefined}
-        _hover={{ bg: "blue.700", color: "white" }}
-      >
-        {loading ? "Scraping" : "Scrape"}
-      </Button>
-    </Box>
+    <Button
+      size="sm"
+      h={8}
+      px={3}
+      variant="outline"
+      borderRadius="8px"
+      bg="bg.panel"
+      borderColor={error ? "red.fg" : "border"}
+      color={error ? "red.fg" : "fg"}
+      fontSize="13px"
+      fontWeight="semibold"
+      _hover={{ bg: "bg.muted" }}
+      onClick={onFetch}
+      loading={loading}
+      loadingText="Fetching"
+      title={error ?? "Get new assignments and announcements"}
+    >
+      <LuRefreshCw />
+      Fetch
+    </Button>
   );
 }

@@ -61,8 +61,8 @@ export default function LoginPage({
 
   return (
     <Box
-      bg="gray.800"
-      w="360px"
+      bg="bg"
+      w="400px"
       h="600px"
       overflow="hidden"
       display="flex"
@@ -85,7 +85,7 @@ export default function LoginPage({
         >
           Andrew Inbox
         </Text>
-        <Text fontSize="xs" color="gray.400">
+        <Text fontSize="xs" color="fg.muted">
           {mode === "signIn"
             ? "Sign in to continue"
             : mode === "signUp"
@@ -105,13 +105,13 @@ export default function LoginPage({
           <VStack gap={5} w="100%" align="stretch">
             {authError && (
               <Box
-                bg="red.900/40"
+                bg="red.subtle"
                 p={2}
                 borderRadius="md"
                 border="1px solid"
-                borderColor="red.500"
+                borderColor="red.muted"
               >
-                <Text color="red.200" fontSize="xs" textAlign="center">
+                <Text color="red.fg" fontSize="xs" textAlign="center">
                   {authError}
                 </Text>
               </Box>
@@ -123,7 +123,7 @@ export default function LoginPage({
                 display="block"
                 fontSize="xs"
                 fontWeight="bold"
-                color="gray.400"
+                color="fg.muted"
                 mb={1}
                 textTransform="uppercase"
               >
@@ -133,15 +133,11 @@ export default function LoginPage({
                 {...register("andrewId")}
                 placeholder="e.g. jdoe"
                 autoComplete="username"
-                bg="gray.900"
-                border="none"
                 fontSize="sm"
-                color="white"
                 disabled={isSubmitting}
-                _focus={{ ring: "1px", ringColor: "blue.400" }}
               />
               {errors.andrewId && (
-                <Text color="red.400" fontSize="xs" mt={1}>
+                <Text color="red.fg" fontSize="xs" mt={1}>
                   {errors.andrewId.message}
                 </Text>
               )}
@@ -153,7 +149,7 @@ export default function LoginPage({
                 display="block"
                 fontSize="xs"
                 fontWeight="bold"
-                color="gray.400"
+                color="fg.muted"
                 mb={1}
                 textTransform="uppercase"
               >
@@ -168,26 +164,22 @@ export default function LoginPage({
                 autoComplete={
                   mode === "signIn" ? "current-password" : "new-password"
                 }
-                bg="gray.900"
-                border="none"
                 fontSize="sm"
-                color="white"
                 disabled={isSubmitting}
-                _focus={{ ring: "1px", ringColor: "blue.400" }}
               />
               {errors.password && (
-                <Text color="red.400" fontSize="xs" mt={1}>
+                <Text color="red.fg" fontSize="xs" mt={1}>
                   {errors.password.message}
                 </Text>
               )}
               {mode === "signIn" && (
                 <Text
                   fontSize="xs"
-                  color="gray.400"
+                  color="fg.muted"
                   textAlign="right"
                   mt={1}
                   cursor="pointer"
-                  _hover={{ color: "white", textDecoration: "underline" }}
+                  _hover={{ color: "fg", textDecoration: "underline" }}
                   onClick={() => {
                     setAuthError(null);
                     setMode("forgot");
@@ -202,23 +194,21 @@ export default function LoginPage({
               type="submit"
               w="100%"
               mt={4}
-              bg="blue.500"
-              color="white"
+              colorPalette="brand"
               loading={isSubmitting}
-              _hover={{ bg: "blue.400" }}
               borderRadius="lg"
               size="md"
             >
               {mode === "signIn" ? "Sign In" : "Create Account"}
             </Button>
 
-            <Text fontSize="xs" color="gray.400" textAlign="center">
+            <Text fontSize="xs" color="fg.muted" textAlign="center">
               {mode === "signIn" ? "New here? " : "Already have an account? "}
               <Text
                 as="span"
-                color="blue.400"
+                color="brand.fg"
                 cursor="pointer"
-                _hover={{ color: "blue.300", textDecoration: "underline" }}
+                _hover={{ textDecoration: "underline" }}
                 onClick={switchMode}
               >
                 {mode === "signIn" ? "Create an account" : "Sign in"}
