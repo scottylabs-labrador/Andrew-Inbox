@@ -21,10 +21,63 @@ interface Props {
   saveCanvasToken: (token: string) => Promise<string | null>;
   onSaved: () => void;
   submitLabel: string;
+  // True when the page already shows CanvasTokenSteps, so the popover isn't needed.
+  // Settings leaves it off and gets the steps in a "How do I get one?" popover.
+  showSteps?: boolean;
+}
+
+const TOKEN_STEPS = [
+  <>
+    Open{" "}
+    <Link href="https://canvas.cmu.edu/profile/settings" target="_blank" color="brand.fg" fontWeight="semibold">
+      your Canvas settings
+    </Link>{" "}
+    (it opens in a new tab).
+  </>,
+  <>
+    Scroll down to <b>Approved Integrations</b> and click <b>+ New Access Token</b>.
+  </>,
+  <>
+    For <b>Purpose</b>, type <b>Andrew Inbox</b>.
+  </>,
+  <>
+    For <b>Expiration date</b>, pick the <b>last day of this semester</b>. (Blank means it never expires.)
+  </>,
+  <>
+    Click <b>Generate Token</b> and copy the whole code. It starts with numbers and a <b>~</b>, and Canvas
+    shows it only once.
+  </>,
+  <>Come back here, paste it in the box, and click the button under it.</>,
+];
+
+export function CanvasTokenSteps() {
+  return (
+    <Box as="ol" fontSize="xs" lineHeight="1.55" color="fg" display="flex" flexDirection="column" gap={1.5}>
+      {TOKEN_STEPS.map((step, i) => (
+        <HStack as="li" key={i} align="start" gap={2} listStyleType="none">
+          <Box
+            flexShrink={0}
+            boxSize="18px"
+            borderRadius="full"
+            bg="brand.subtle"
+            color="brand.fg"
+            fontSize="10px"
+            fontWeight="bold"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+          >
+            {i + 1}
+          </Box>
+          <Text>{step}</Text>
+        </HStack>
+      ))}
+    </Box>
+  );
 }
 
 // Used both for first-time setup and for replacing the token in Settings
-export default function CanvasTokenForm({ saveCanvasToken, onSaved, submitLabel }: Props) {
+export default function CanvasTokenForm({ saveCanvasToken, onSaved, submitLabel, showSteps }: Props) {
   const [saveError, setSaveError] = useState<string | null>(null);
   const {
     register,
@@ -51,33 +104,25 @@ export default function CanvasTokenForm({ saveCanvasToken, onSaved, submitLabel 
           <Text fontSize="xs" fontWeight="semibold" color="fg.muted" textTransform="uppercase" letterSpacing="wide">
             Canvas access token
           </Text>
-          <Popover.Root positioning={{ placement: "bottom-end" }}>
-            <Popover.Trigger asChild>
-              <Link as="button" fontSize="xs" color="brand.fg">
-                How do I get one?
-              </Link>
-            </Popover.Trigger>
-            <Portal>
-              <Popover.Positioner>
-                <Popover.Content w="280px">
-                  <Popover.Arrow />
-                  <Popover.Body fontSize="xs" lineHeight="1.6">
-                    <Text>
-                      On{" "}
-                      <Link href="https://canvas.cmu.edu/profile/settings" target="_blank" color="brand.fg">
-                        canvas.cmu.edu
-                      </Link>{" "}
-                      go to <b>Account › Settings › Approved Integrations › + New Access Token</b>.
-                    </Text>
-                    <Text mt={2}>
-                      Name it "Andrew Inbox", click <b>Generate Token</b>, and copy the long code it shows.
-                      When it expires, paste a new one in Settings.
-                    </Text>
-                  </Popover.Body>
-                </Popover.Content>
-              </Popover.Positioner>
-            </Portal>
-          </Popover.Root>
+          {!showSteps && (
+            <Popover.Root positioning={{ placement: "bottom-end" }}>
+              <Popover.Trigger asChild>
+                <Link as="button" fontSize="xs" color="brand.fg">
+                  How do I get one?
+                </Link>
+              </Popover.Trigger>
+              <Portal>
+                <Popover.Positioner>
+                  <Popover.Content w="300px">
+                    <Popover.Arrow />
+                    <Popover.Body>
+                      <CanvasTokenSteps />
+                    </Popover.Body>
+                  </Popover.Content>
+                </Popover.Positioner>
+              </Portal>
+            </Popover.Root>
+          )}
         </HStack>
 
         <Input

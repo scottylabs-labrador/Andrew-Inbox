@@ -1,4 +1,5 @@
 import { Box, Checkbox, HStack, IconButton, Text } from "@chakra-ui/react";
+import { useState } from "react";
 import { LuPencil } from "react-icons/lu";
 import type { Task } from "../hooks/useTasks";
 import { isOverdue as isPastDue, startOfDay } from "@/dates";
@@ -18,6 +19,8 @@ export default function TaskCard({ taskd, onToggle, onEdit, timeOnly }: TaskCard
   const isOverdue = isPastDue(taskd.due, done);
   const dueToday = startOfDay(taskd.due).getTime() === startOfDay(new Date()).getTime();
   const dotColor = useCourseColor(taskd.course);
+  // Animate only checks made just now, not tasks that were already done on load
+  const [justTicked, setJustTicked] = useState(false);
 
   // e.g. "6:00 PM" or "Oct 28, 11:59 PM", in the user's own timezone
   const formattedDate = taskd.due.toLocaleString("en-US", {
@@ -32,7 +35,10 @@ export default function TaskCard({ taskd, onToggle, onEdit, timeOnly }: TaskCard
   return (
     <Checkbox.Root
       checked={done}
-      onCheckedChange={onToggle}
+      onCheckedChange={() => {
+        setJustTicked(!done);
+        onToggle();
+      }}
       colorPalette="brand"
       display="flex"
       alignItems="start"
@@ -56,7 +62,23 @@ export default function TaskCard({ taskd, onToggle, onEdit, timeOnly }: TaskCard
         borderRadius="5px"
         borderWidth="1.5px"
         borderColor={done ? "brand.solid" : "border.emphasized"}
-      />
+        animation={done && justTicked ? "tick-pop 0.3s ease-out" : undefined}
+      >
+        {/* Drawn in with a stroke animation each time the task is ticked off */}
+        {done && (
+          <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true">
+            <path
+              d="M4 12.5l5 5L20 6.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={justTicked ? "tick-draw" : undefined}
+            />
+          </svg>
+        )}
+      </Checkbox.Control>
 
       <Box flex="1" minW={0} display="flex" flexDirection="column" gap="6px">
         <HStack justify="space-between" align="start" gap={2}>

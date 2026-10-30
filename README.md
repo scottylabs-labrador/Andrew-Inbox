@@ -1,65 +1,173 @@
 # Andrew Inbox
 
-Andrew Inbox puts your Canvas, Gradescope, and Piazza assignments and announcements in one Chrome popup. This guide gets it running on your laptop in about 10 minutes.
+Andrew Inbox puts your Canvas, Gradescope, and Piazza assignments and announcements in one Chrome popup. This guide gets it running on your laptop in about 15 minutes. You only do the setup once.
 
-**You need:** Google Chrome and Python 3.12 or newer. (Check Python by opening a terminal and running `python --version`. On Windows, if Python isn't found, reinstall it from [python.org](https://www.python.org/downloads) and tick **"Add python.exe to PATH"** on the first screen.)
+**Pick your computer and follow only that guide:**
+
+- 🪟 [**Windows guide**](#windows-guide)
+- 🍎 [**Mac guide**](#mac-guide)
+
+When you're done, go to [**Using Andrew Inbox**](#using-andrew-inbox). That part is the same on both.
 
 ---
 
-## Step 1: Download the project
+## Windows guide
+
+### W1. Install Chrome and Python
+
+1. Install **Google Chrome** from [google.com/chrome](https://www.google.com/chrome) if you don't have it.
+2. Install **Python**: go to [python.org/downloads](https://www.python.org/downloads), click the big yellow **Download Python** button, and open the file you downloaded.
+3. **On the first screen of the installer, tick the box "Add python.exe to PATH"** at the bottom. It's easy to miss and it matters. Then click **Install Now**.
+4. Check it worked: press the **Windows key**, type `cmd`, press **Enter**. In the black window, type `python --version` and press **Enter**. You should see `Python 3.12` or a higher number. If it says Python wasn't found, run the installer again and make sure you tick that box.
+
+### W2. Download the project
 
 1. Go to https://github.com/scottylabs-labrador/Andrew-Inbox
-2. Click the branch dropdown (it says **main**) and choose **gmail-summary**.
+2. Near the top left, click the button that says **main** and choose **gmail-summary**.
 3. Click the green **Code** button → **Download ZIP**.
-4. Unzip it. You'll get a folder like `Andrew-Inbox-gmail-summary`. Put it somewhere permanent, like Documents.
+4. Open your **Downloads** folder, **right-click** the ZIP file → **Extract All…** → **Extract**.
+5. You'll get a folder like `Andrew-Inbox-gmail-summary`. Move it somewhere you'll keep it, like **Documents**. Don't use the files from inside the ZIP; the app only works from the extracted folder.
 
-## Step 2: Add the `.env` file
+### W3. Make the `.env` file
 
-Ask Arav for the `.env` file. It holds private keys, so it's sent to you directly, not on GitHub.
+The app needs a few private keys. They aren't on GitHub, so you'll make a small file for them yourself. Arav will send you the text that goes in it.
 
-Put it **directly inside** the folder from Step 1, next to `start-backend.bat`. The file must be named exactly `.env`, with the dot and no `.txt` at the end.
+1. **Get the text from Arav.** Message Arav and ask for the `.env` contents. You'll get a few lines that look roughly like this:
+   ```
+   SUPABASE_URL=https://....supabase.co
+   SUPABASE_KEY=sb_secret_...
+   SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+   OPENROUTER_API=sk-or-...
+   ```
+   Don't share this text with anyone else.
+2. **Install Visual Studio Code** (a free code editor) from [code.visualstudio.com](https://code.visualstudio.com). Open it once it's installed.
+3. **Open the project folder.** In VS Code, click **File** → **Open Folder…**, pick the `Andrew-Inbox-gmail-summary` folder from W2, and click **Select Folder**. If it asks "Do you trust the authors?", click **Yes, I trust the authors**.
+4. **Make a new file.** On the left is a list of the project's files (things like `backend`, `start-backend.bat`, `README.md`). Click an **empty spot** in that list (not on a folder), then click the **New File** icon (a page with a **+**) at the top of the list.
+5. **Name it `.env`.** Type exactly `.env` (a dot, then `env`, nothing else) and press **Enter**. The empty file opens on the right.
+6. **Paste Arav's text.** Click inside the empty file and press **Ctrl+V**.
+7. **Save.** Press **Ctrl+S**. The dot on the file's tab disappears once it's saved.
 
-> **Windows tip:** if you can't tell whether it's named `.env.txt`, open File Explorer → **View** → **Show** → turn on **File name extensions**.
+**Check it worked:** `.env` should be in the list on the left at the same level as `start-backend.bat`, not inside a folder. If it's inside a folder, drag it out onto an empty spot in the list. You can close VS Code now.
 
-## Step 3: Add the extension to Chrome
+### W4. Add the extension to Chrome
 
-1. In Chrome, go to `chrome://extensions`
-2. Turn on **Developer mode** (switch in the top-right corner).
-3. Click **Load unpacked**.
-4. Open the project folder, select the **`andrew-inbox-extension`** folder inside it, and click **Select Folder**.
-5. Click the puzzle-piece icon in Chrome's toolbar and pin **Andrew Inbox**.
+1. In Chrome, type `chrome://extensions` in the address bar and press **Enter**.
+2. Turn on **Developer mode** (the switch in the top-right corner).
+3. Click **Load unpacked** (top left).
+4. Go into your `Andrew-Inbox-gmail-summary` folder, click once on the **`andrew-inbox-extension`** folder, and click **Select Folder**.
+5. Click the **puzzle-piece icon** in Chrome's toolbar, then click the **pin** next to **Andrew Inbox** so it stays visible.
 
-This works the same in other Chromium browsers: Edge (`edge://extensions`), Brave (`brave://extensions`), Arc, Opera and Vivaldi.
+### W5. Start the backend
 
-> **Using Firefox instead?** Go to `about:debugging` → **This Firefox** → **Load Temporary Add-on…**, open the `andrew-inbox-extension` folder, and pick **`manifest.json`**. Firefox removes temporary add-ons when it closes, so you redo this each time you open Firefox. You still need Google Chrome installed, because the backend uses it to read Gradescope and Piazza.
->
-> **Safari** isn't supported yet. It needs the extension wrapped in a Mac app with Xcode.
+The backend is the part that fetches your assignments. It runs in its own window.
 
-## Step 4: Start the backend
+1. Open your `Andrew-Inbox-gmail-summary` folder in File Explorer.
+2. **Double-click `start-backend.bat`.** A black window opens.
+   - If a blue box says **"Windows protected your PC"**, click **More info** → **Run anyway**.
+3. The first time, it installs what it needs. This takes a few minutes. It's ready when the window shows:
+   ```
+   ==============================================================
+     DONE! The backend is running and the extension works now.
+   ```
+4. **Leave that window open** while you use Andrew Inbox. Close it when you're done.
 
-The backend is the part that fetches your assignments.
+✅ Setup done. Go to [**Using Andrew Inbox**](#using-andrew-inbox).
 
-- **Windows:** double-click **`start-backend.bat`** in the project folder.
-- **Mac:** open Terminal, type `cd ` (with a space), drag the project folder onto the Terminal window, press Enter, then run `./start-backend.sh`.
+**Every time after this:** double-click `start-backend.bat`, wait for **DONE!**, then click the Andrew Inbox icon in Chrome.
 
-The first time, it installs what it needs, which takes a few minutes. It's ready when the window shows:
+---
 
-```
-==============================================================
-  DONE! The backend is running and the extension works now.
-```
+## Mac guide
 
-**Keep that window open** while you use Andrew Inbox. Close it when you're done.
+### M1. Install Chrome and Python
 
-## Step 5: Use it
+1. Install **Google Chrome** from [google.com/chrome](https://www.google.com/chrome) if you don't have it.
+2. Install **Python**: go to [python.org/downloads](https://www.python.org/downloads), click the big yellow **Download Python** button, open the `.pkg` file you downloaded, and click through the installer.
+3. Check it worked: press **Cmd+Space**, type `Terminal`, press **Return**. In the window that opens, type `python3 --version` and press **Return**. You should see `Python 3.12` or a higher number.
 
-1. Click the **Andrew Inbox** icon in Chrome → **Create an account**. Use your Andrew ID (just `jdoe`, not the full email) and a password.
-2. It asks for a **Canvas access token**:
-   - Go to [canvas.cmu.edu](https://canvas.cmu.edu) → **Account** → **Settings** → **Approved Integrations** → **+ New Access Token**.
-   - Name it "Andrew Inbox", click **Generate Token**, copy the long code (it starts with numbers and a `~`), paste it, and click **Save Token**.
-3. Andrew Inbox fetches your assignments and announcements by itself. The first fetch takes a minute or two. After that it updates by itself every 7 days when you open it, or click **Fetch** to update sooner.
+### M2. Download the project
 
-**Next time,** just do Step 4 (start the backend) and click the extension. Steps 1–3 and 5 are one-time.
+1. Go to https://github.com/scottylabs-labrador/Andrew-Inbox
+2. Near the top left, click the button that says **main** and choose **gmail-summary**.
+3. Click the green **Code** button → **Download ZIP**.
+4. Open your **Downloads** folder in Finder. If you see a ZIP file, **double-click it** to unzip it. (Safari sometimes unzips it for you.)
+5. You'll get a folder like `Andrew-Inbox-gmail-summary`. Drag it somewhere you'll keep it, like **Documents**.
+
+### M3. Make the `.env` file
+
+The app needs a few private keys. They aren't on GitHub, so you'll make a small file for them yourself. Arav will send you the text that goes in it.
+
+1. **Get the text from Arav.** Message Arav and ask for the `.env` contents. You'll get a few lines that look roughly like this:
+   ```
+   SUPABASE_URL=https://....supabase.co
+   SUPABASE_KEY=sb_secret_...
+   SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+   OPENROUTER_API=sk-or-...
+   ```
+   Don't share this text with anyone else.
+2. **Install Visual Studio Code** (a free code editor) from [code.visualstudio.com](https://code.visualstudio.com). Open the download, drag **Visual Studio Code** into your **Applications** folder, and open it.
+3. **Open the project folder.** In VS Code, click **File** → **Open Folder…** (on some versions it's just **Open…**), pick the `Andrew-Inbox-gmail-summary` folder from M2, and click **Open**. If it asks "Do you trust the authors?", click **Yes, I trust the authors**.
+4. **Make a new file.** On the left is a list of the project's files (things like `backend`, `start-backend.sh`, `README.md`). Click an **empty spot** in that list (not on a folder), then click the **New File** icon (a page with a **+**) at the top of the list.
+5. **Name it `.env`.** Type exactly `.env` (a dot, then `env`, nothing else) and press **Return**. The empty file opens on the right.
+6. **Paste Arav's text.** Click inside the empty file and press **Cmd+V**.
+7. **Save.** Press **Cmd+S**. The dot on the file's tab disappears once it's saved.
+
+**Check it worked:** `.env` should be in the list on the left at the same level as `start-backend.sh`, not inside a folder. If it's inside a folder, drag it out onto an empty spot in the list. You can close VS Code now.
+
+> Finder hides files that start with a dot, so you won't see `.env` there. That's normal. (Press **Cmd+Shift+.** in Finder if you want to see it.)
+
+### M4. Add the extension to Chrome
+
+1. In Chrome, type `chrome://extensions` in the address bar and press **Return**.
+2. Turn on **Developer mode** (the switch in the top-right corner).
+3. Click **Load unpacked** (top left).
+4. Go into your `Andrew-Inbox-gmail-summary` folder, click once on the **`andrew-inbox-extension`** folder, and click **Select**.
+5. Click the **puzzle-piece icon** in Chrome's toolbar, then click the **pin** next to **Andrew Inbox** so it stays visible.
+
+### M5. Start the backend
+
+The backend is the part that fetches your assignments. It runs in a Terminal window.
+
+1. Open **Terminal** (**Cmd+Space**, type `Terminal`, press **Return**).
+2. Type `cd` followed by a **space**. Don't press Return yet.
+3. Drag your `Andrew-Inbox-gmail-summary` folder from Finder onto the Terminal window. Its location appears after `cd `. Now press **Return**.
+4. Type `bash start-backend.sh` and press **Return**.
+5. The first time, it installs what it needs. This takes a few minutes. It's ready when the window shows:
+   ```
+   ==============================================================
+     DONE! The backend is running and the extension works now.
+   ```
+6. **Leave that window open** while you use Andrew Inbox. Close it when you're done.
+
+✅ Setup done. Go to [**Using Andrew Inbox**](#using-andrew-inbox).
+
+**Every time after this:** do steps 1–4 of M5, wait for **DONE!**, then click the Andrew Inbox icon in Chrome.
+
+---
+
+## Using Andrew Inbox
+
+### First time: make an account
+
+1. Click the **Andrew Inbox** icon in Chrome's toolbar.
+2. At the top of the popup, choose **I'm new**. (Next time, choose **I have an account**.)
+3. Type your **Andrew ID**, just the first part, like `jdoe`, not `jdoe@andrew.cmu.edu`.
+4. Make up a **password** (at least 6 characters) and click **Create Account**.
+
+### Connect Canvas
+
+Next it asks for a **Canvas access token**. This lets Andrew Inbox read your classes. The popup shows these same steps.
+
+1. Open your Canvas settings: [canvas.cmu.edu/profile/settings](https://canvas.cmu.edu/profile/settings) (or on Canvas click **Account** → **Settings**).
+2. Scroll down to **Approved Integrations** and click **+ New Access Token**.
+3. For **Purpose**, type `Andrew Inbox`.
+4. For **Expiration date**, pick the **last day of this semester**. You'll make a new one next semester. (If you leave it blank, it never expires.)
+5. Click **Generate Token**. Copy the long code it shows. It starts with numbers and a `~`, like `7752~AbCd…`. **Canvas only shows it once**, so copy it now.
+6. Go back to the popup, paste it, and click **Save and continue**.
+
+Andrew Inbox then fetches your assignments and announcements by itself. The first fetch takes a minute or two. After that it updates every 7 days when you open it, or click **Fetch** to update sooner.
+
+**When your token expires** (for example at the start of next semester), make a new one the same way and paste it in the popup's **Settings**.
 
 ---
 
@@ -68,13 +176,17 @@ The first time, it installs what it needs, which takes a few minutes. It's ready
 | Problem | Fix |
 | --- | --- |
 | Chrome says **"Manifest file is missing"** | You picked the wrong folder. Pick `andrew-inbox-extension`, the one with `manifest.json` directly inside. |
-| `start-backend` says **Python 3.12 or newer was not found** | Install Python from python.org (tick "Add python.exe to PATH"), restart your laptop, try again. |
-| `start-backend` says **Missing the .env file** | The `.env` isn't in the project folder, or it's secretly named `.env.txt` (see Step 2). |
-| The `start-backend.bat` window flashes and closes | Open Command Prompt, drag `start-backend.bat` into it, press Enter, and send Arav the error. |
-| Mac: **permission denied** | Run `chmod +x start-backend.sh` once, then `./start-backend.sh` again. |
+| Backend says **Python 3.12 or newer was not found** | Install Python again (W1 / M1). On Windows, tick "Add python.exe to PATH". Then restart your laptop and try again. |
+| Backend says **Missing the .env file** | The `.env` file isn't in the main project folder (it may have ended up inside `backend` or another folder), or it's not named exactly `.env`. Redo W3 / M3. |
+| Windows: the `start-backend.bat` window flashes and closes | Press the Windows key, type `cmd`, press Enter. Drag `start-backend.bat` into that window, press Enter, and send Arav the error. |
+| Mac: **No such file or directory** | Terminal isn't in the project folder. Redo M5 from step 2, dragging the `Andrew-Inbox-gmail-summary` folder itself. |
+| Not sure whether to pick **I'm new** or **I have an account** | If you've never made an Andrew Inbox account, pick **I'm new**. If it says the account already exists, pick **I have an account**. |
+| **"Wrong Andrew ID or password"** | Check both, or click **Forgot password?** on the sign-in screen. |
+| Canvas token says **"doesn't look like a Canvas token"** | You copied only part of it. Make a new token and copy the whole code, starting with the numbers and `~`. |
 | Popup just shows a spinning circle | You're offline. Connect to the internet and reopen the popup. |
-| **Fetch** button turns red | The backend isn't running. Do Step 4 and keep the window open. Hover over the button to see the exact error. |
-| **"Wrong Andrew ID or password"** | Check both, or use **Forgot password?** on the sign-in screen. |
+| **Fetch** button turns red | The backend isn't running. Start it (W5 / M5) and keep the window open. Hover over the button to see the exact error. |
+
+**Other browsers:** Edge, Brave, Arc, Opera and Vivaldi work the same way; use `edge://extensions`, `brave://extensions`, and so on. On **Firefox**, go to `about:debugging` → **This Firefox** → **Load Temporary Add-on…** and pick `manifest.json` inside `andrew-inbox-extension`. Firefox forgets it when it closes, so you redo this each time, and you still need Chrome installed for the backend. **Safari** isn't supported yet.
 
 ---
 

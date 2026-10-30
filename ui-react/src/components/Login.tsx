@@ -1,4 +1,4 @@
-import { Box, Text, VStack, Input, Button } from "@chakra-ui/react";
+import { Box, Text, VStack, HStack, Input, Button } from "@chakra-ui/react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -54,9 +54,9 @@ export default function LoginPage({
     setAuthError(await action(data.andrewId, data.password));
   };
 
-  const switchMode = () => {
+  const switchMode = (next: "signIn" | "signUp") => {
     setAuthError(null);
-    setMode(mode === "signIn" ? "signUp" : "signIn");
+    setMode(next);
   };
 
   return (
@@ -72,7 +72,7 @@ export default function LoginPage({
       px={8}
       position="relative"
     >
-      <VStack gap={1} mb={10}>
+      <VStack gap={1} mb={6}>
         <Text
           fontSize="2xl"
           fontWeight="bold"
@@ -85,14 +85,48 @@ export default function LoginPage({
         >
           Andrew Inbox
         </Text>
-        <Text fontSize="xs" color="fg.muted">
-          {mode === "signIn"
-            ? "Sign in to continue"
-            : mode === "signUp"
-              ? "Create your account"
-              : "Reset your password"}
-        </Text>
+        {mode === "forgot" && (
+          <Text fontSize="xs" color="fg.muted">
+            Reset your password
+          </Text>
+        )}
       </VStack>
+
+      {mode !== "forgot" && (
+        <Box w="100%" mb={6}>
+          <HStack
+            p="3px"
+            gap="3px"
+            bg="bg.muted"
+            borderRadius="lg"
+            role="tablist"
+          >
+            {(["signUp", "signIn"] as const).map((m) => (
+              <Button
+                key={m}
+                role="tab"
+                aria-selected={mode === m}
+                flex="1"
+                size="sm"
+                borderRadius="md"
+                variant="plain"
+                bg={mode === m ? "bg.panel" : "transparent"}
+                color={mode === m ? "fg" : "fg.muted"}
+                fontWeight={mode === m ? "semibold" : "medium"}
+                shadow={mode === m ? "xs" : "none"}
+                onClick={() => switchMode(m)}
+              >
+                {m === "signUp" ? "I'm new" : "I have an account"}
+              </Button>
+            ))}
+          </HStack>
+          <Text fontSize="xs" color="fg.muted" textAlign="center" mt={2}>
+            {mode === "signUp"
+              ? "First time here? Make an account with your Andrew ID."
+              : "Welcome back. Sign in with the password you made."}
+          </Text>
+        </Box>
+      )}
 
       {mode === "forgot" ? (
         <ForgotPassword
@@ -201,19 +235,6 @@ export default function LoginPage({
             >
               {mode === "signIn" ? "Sign In" : "Create Account"}
             </Button>
-
-            <Text fontSize="xs" color="fg.muted" textAlign="center">
-              {mode === "signIn" ? "New here? " : "Already have an account? "}
-              <Text
-                as="span"
-                color="brand.fg"
-                cursor="pointer"
-                _hover={{ textDecoration: "underline" }}
-                onClick={switchMode}
-              >
-                {mode === "signIn" ? "Create an account" : "Sign in"}
-              </Text>
-            </Text>
           </VStack>
         </form>
       )}
