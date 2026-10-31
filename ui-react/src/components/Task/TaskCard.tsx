@@ -31,15 +31,10 @@ export default function TaskCard({ taskd, onToggle, onEdit, timeOnly }: TaskCard
 
   const dueColor = isOverdue ? "red.fg" : dueToday && !done ? "brand.fg" : "fg.muted";
 
-  // The whole card is the checkbox's label, so clicking anywhere ticks it off
+  // Keep the checkbox separate from the card content so opening/clicking an
+  // assignment does not mark it complete.
   return (
-    <Checkbox.Root
-      checked={done}
-      onCheckedChange={() => {
-        setJustTicked(!done);
-        onToggle();
-      }}
-      colorPalette="brand"
+    <Box
       display="flex"
       alignItems="start"
       gap={3}
@@ -50,35 +45,44 @@ export default function TaskCard({ taskd, onToggle, onEdit, timeOnly }: TaskCard
       borderWidth="1px"
       borderColor={isOverdue ? "red.muted" : "border.muted"}
       borderRadius="10px"
-      cursor="pointer"
       opacity={done ? 0.55 : 1}
       transition="opacity 0.2s, border-color 0.15s"
       _hover={{ borderColor: isOverdue ? "red.emphasized" : "border.emphasized" }}
     >
-      <Checkbox.HiddenInput aria-label={`Mark ${taskd.assignment} done`} />
-      <Checkbox.Control
-        boxSize="18px"
-        mt="1px"
-        borderRadius="5px"
-        borderWidth="1.5px"
-        borderColor={done ? "brand.solid" : "border.emphasized"}
-        animation={done && justTicked ? "tick-pop 0.3s ease-out" : undefined}
+      <Checkbox.Root
+        checked={done}
+        onCheckedChange={() => {
+          setJustTicked(!done);
+          onToggle();
+        }}
+        colorPalette="brand"
+        cursor="pointer"
       >
-        {/* Drawn in with a stroke animation each time the task is ticked off */}
-        {done && (
-          <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true">
-            <path
-              d="M4 12.5l5 5L20 6.5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className={justTicked ? "tick-draw" : undefined}
-            />
-          </svg>
-        )}
-      </Checkbox.Control>
+        <Checkbox.HiddenInput aria-label={`Mark ${taskd.assignment} done`} />
+        <Checkbox.Control
+          boxSize="18px"
+          mt="1px"
+          borderRadius="5px"
+          borderWidth="1.5px"
+          borderColor={done ? "brand.solid" : "border.emphasized"}
+          animation={done && justTicked ? "tick-pop 0.3s ease-out" : undefined}
+        >
+          {/* Drawn in with a stroke animation each time the task is ticked off */}
+          {done && (
+            <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true">
+              <path
+                d="M4 12.5l5 5L20 6.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={justTicked ? "tick-draw" : undefined}
+              />
+            </svg>
+          )}
+        </Checkbox.Control>
+      </Checkbox.Root>
 
       <Box flex="1" minW={0} display="flex" flexDirection="column" gap="6px">
         <HStack justify="space-between" align="start" gap={2}>
@@ -123,6 +127,6 @@ export default function TaskCard({ taskd, onToggle, onEdit, timeOnly }: TaskCard
           </Text>
         </HStack>
       </Box>
-    </Checkbox.Root>
+    </Box>
   );
 }
