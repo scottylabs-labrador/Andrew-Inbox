@@ -6,6 +6,13 @@ export interface Profile {
   userId: string;
   username: string;
   hasCanvasToken: boolean;
+  hasEdToken: boolean;
+}
+
+// Ed Discussion is optional: set a token to fetch Ed announcements, null to stop
+export interface EdTokenControls {
+  hasToken: boolean;
+  save: (token: string | null) => Promise<string | null>;
 }
 
 // Supabase Auth signs people in by email, so each Andrew ID maps to its
@@ -40,7 +47,7 @@ export const useAuth = () => {
     }
     const { data, error } = await supabase
       .from("profiles")
-      .select("username, has_canvas_token")
+      .select("username, has_canvas_token, has_edstem_token")
       .eq("id", s.user.id)
       .maybeSingle();
 
@@ -49,6 +56,7 @@ export const useAuth = () => {
       userId: s.user.id,
       username: data?.username ?? s.user.email?.split("@")[0] ?? "",
       hasCanvasToken: data?.has_canvas_token ?? false,
+      hasEdToken: data?.has_edstem_token ?? false,
     });
     setLoading(false);
   }, []);
@@ -144,6 +152,17 @@ export const useAuth = () => {
     return null;
   };
 
+  const saveEdToken = async (token: string | null) => {
+    if (!session) return "You're signed out. Sign in again.";
+    const { error } = await supabase
+      .from("profiles")
+      .update({ edstem_token: token?.trim() || null })
+      .eq("id", session.user.id);
+    if (error) return "Couldn't save your Ed token. Please try again.";
+    setProfile((p) => (p ? { ...p, hasEdToken: !!token } : p));
+    return null;
+  };
+
   return {
     session,
     profile,
@@ -155,5 +174,6 @@ export const useAuth = () => {
     resetPassword,
     signOut,
     saveCanvasToken,
+    saveEdToken,
   };
 };

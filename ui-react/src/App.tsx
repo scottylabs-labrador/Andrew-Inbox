@@ -21,6 +21,7 @@ function App() {
     resetPassword,
     signOut,
     saveCanvasToken,
+    saveEdToken,
   } = useAuth();
 
   let page;
@@ -62,6 +63,7 @@ function App() {
       <MainView
         c={{ userId: profile.userId, username: profile.username }}
         saveCanvasToken={saveCanvasToken}
+        ed={{ hasToken: profile.hasEdToken, save: saveEdToken }}
         onSignOut={signOut}
       />
     );

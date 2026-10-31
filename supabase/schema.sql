@@ -4,7 +4,7 @@
 -- Who can see what:
 --   * People sign in with Supabase Auth (Andrew ID + password).
 --   * Each person can only read and change their own assignments and announcements.
---   * Canvas tokens are write-only from the extension: a user can save theirs,
+--   * Canvas and Ed tokens are write-only from the extension: a user can save theirs,
 --     but nobody can read tokens back except the backend (which uses the secret key).
 
 -- Every table below grants its own permissions, so this works whether or not
@@ -19,6 +19,8 @@ create table public.profiles (
   username text not null unique,
   canvas_token text,
   has_canvas_token boolean generated always as (canvas_token is not null) stored,
+  edstem_token text,  -- optional; Ed announcements are fetched only when set
+  has_edstem_token boolean generated always as (edstem_token is not null) stored,
   created_at timestamptz not null default now()
 );
 
@@ -46,11 +48,11 @@ create policy "read own profile" on public.profiles
 create policy "update own profile" on public.profiles
   for update to authenticated using ((select auth.uid()) = id) with check ((select auth.uid()) = id);
 
--- Column-level permissions: users can see whether a token is saved, and set it,
--- but can never read the token itself.
+-- Column-level permissions: users can see whether a token is saved, and set it
+-- (or clear it), but can never read the token itself.
 revoke all on public.profiles from anon, authenticated;
-grant select (id, username, has_canvas_token, created_at) on public.profiles to authenticated;
-grant update (canvas_token) on public.profiles to authenticated;
+grant select (id, username, has_canvas_token, has_edstem_token, created_at) on public.profiles to authenticated;
+grant update (canvas_token, edstem_token) on public.profiles to authenticated;
 grant all on public.profiles to service_role;
 
 -- ---------------------------------------------------------------------------
@@ -81,7 +83,7 @@ grant select, insert, update, delete on public.assignments_duplicate to authenti
 grant all on public.assignments_duplicate to service_role;
 
 -- ---------------------------------------------------------------------------
--- Announcements (Piazza, ...)
+-- Announcements (Piazza, Ed, ...)
 -- ---------------------------------------------------------------------------
 create table public.announcements (
   announcement_id text primary key,
