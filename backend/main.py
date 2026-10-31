@@ -8,6 +8,7 @@
 from fastapi import FastAPI, BackgroundTasks, HTTPException, Header
 from pydantic import BaseModel
 from canvas import send_canvas_to_supabase
+from courses import InvalidCanvasTokenError
 from piazza.piazza_to_supabase import send_piazza_to_supabase
 from gradescope import send_gradescope_to_supabase
 from dedupe import remove_cross_platform_duplicates
@@ -117,5 +118,15 @@ def trigger_sync(authorization: str | None = Header(default=None)):
             "status": "success",
             "message": f"Sync completed for {user_id}."
         }
+    except InvalidCanvasTokenError:
+        # The extension looks for this code to point the user at "Replace token"
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "invalid_canvas_token",
+                "message": "Your Canvas token isn't working. It may have expired or been deleted. "
+                           "Go to Settings and replace it with a new one.",
+            },
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

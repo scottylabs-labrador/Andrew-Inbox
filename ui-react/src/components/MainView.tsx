@@ -1,6 +1,6 @@
-import { Box, HStack, IconButton, Text } from "@chakra-ui/react";
+import { Box, Button, HStack, IconButton, Text } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { LuChevronLeft, LuSettings } from "react-icons/lu";
+import { LuChevronLeft, LuSettings, LuTriangleAlert } from "react-icons/lu";
 import TimeToggle from "./TimeToggle";
 import TasksPage from "./Task/TasksPage";
 import AnnoucementPage from "./Announcement/AnnoucementPage";
@@ -81,7 +81,7 @@ export default function MainView({ c, saveCanvasToken, onSignOut }: Props) {
   const [refreshKey, setRefreshKey] = useState(0);
   const courses = useCourses(c.userId, refreshKey);
   const announcements = useAnnounce(refreshKey);
-  const { executeSync, loading, error } = useBackend(c.userId);
+  const { executeSync, loading, error, canvasTokenInvalid, clearCanvasTokenError } = useBackend(c.userId);
 
   const runFetch = async () => {
     if (await executeSync()) setRefreshKey((k) => k + 1);
@@ -174,6 +174,40 @@ export default function MainView({ c, saveCanvasToken, onSignOut }: Props) {
               />
             </HStack>
 
+            {canvasTokenInvalid && (
+              <HStack
+                mx={4}
+                mt={3}
+                p={3}
+                gap={2.5}
+                align="start"
+                borderRadius="10px"
+                borderWidth="1px"
+                borderColor="red.muted"
+                bg="red.subtle"
+                color="red.fg"
+                flexShrink={0}
+                role="alert"
+              >
+                <Box mt="2px" flexShrink={0}>
+                  <LuTriangleAlert />
+                </Box>
+                <Box flex={1} fontSize="13px" lineHeight="1.45">
+                  <Text fontWeight="bold">Your Canvas token isn't working</Text>
+                  <Text color="fg">It may have expired or been deleted. Add a new one to keep getting updates.</Text>
+                </Box>
+                <Button
+                  size="xs"
+                  colorPalette="red"
+                  flexShrink={0}
+                  alignSelf="center"
+                  onClick={() => setShowSettings(true)}
+                >
+                  Fix it
+                </Button>
+              </HStack>
+            )}
+
             {/* Filters */}
             <HStack px={4} py={3} gap={2} flexShrink={0}>
               {activeTab === "todo" ? (
@@ -217,8 +251,10 @@ export default function MainView({ c, saveCanvasToken, onSignOut }: Props) {
               lastFetch={getLastFetch(c.userId)}
               fetching={loading}
               fetchError={error}
+              canvasTokenInvalid={canvasTokenInvalid}
               onFetch={runFetch}
               saveCanvasToken={saveCanvasToken}
+              onTokenSaved={clearCanvasTokenError}
               onSignOut={onSignOut}
             />
           ) : activeTab === "todo" ? (

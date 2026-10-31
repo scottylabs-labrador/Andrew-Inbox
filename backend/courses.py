@@ -13,6 +13,10 @@ CANVAS_BASE_URL = "https://canvas.cmu.edu"
 UPCOMING_TERM_WINDOW = timedelta(days=14)
 
 
+class InvalidCanvasTokenError(Exception):
+    """Canvas rejected the token (wrong, expired, or deleted)."""
+
+
 def parse_canvas_date(date_str):
     if not date_str:
         return None
@@ -70,6 +74,8 @@ def get_active_courses(canvas_token, session=None):
     courses = []
     while url:
         r = http.get(url, headers=headers)
+        if r.status_code == 401:
+            raise InvalidCanvasTokenError()
         r.raise_for_status()
         courses.extend(r.json())
         url = r.links.get("next", {}).get("url")

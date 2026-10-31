@@ -21,13 +21,19 @@ export function isFetchDue(userId: string, now = new Date()) {
   return !last || now.getTime() - last.getTime() > AUTO_FETCH_DAYS * 864e5;
 }
 
+export const INVALID_TOKEN_MESSAGE =
+  "Your Canvas token isn't working. It may have expired or been deleted. Replace it with a new one in Settings.";
+
 export const useBackend = (userId?: string) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Canvas rejected the saved token, so the user needs to paste a new one
+  const [canvasTokenInvalid, setCanvasTokenInvalid] = useState(false);
 
   const executeSync = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setCanvasTokenInvalid(false);
 
     try {
       // The backend works out who you are from your sign-in session.
@@ -42,7 +48,14 @@ export const useBackend = (userId?: string) => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `Fetch failed: ${response.status}`);
+        const detail = errorData.detail;
+        if (detail?.code === "invalid_canvas_token") {
+          setCanvasTokenInvalid(true);
+          throw new Error(INVALID_TOKEN_MESSAGE);
+        }
+        throw new Error(
+          (typeof detail === "string" ? detail : detail?.message) || `Fetch failed: ${response.status}`,
+        );
       }
 
       if (userId) {
@@ -67,5 +80,11 @@ export const useBackend = (userId?: string) => {
     }
   }, [userId]);
 
-  return { executeSync, loading, error };
+  // After a new token is saved, hide the warning until the next fetch says otherwise
+  const clearCanvasTokenError = useCallback(() => {
+    setCanvasTokenInvalid(false);
+    setError(null);
+  }, []);
+
+  return { executeSync, loading, error, canvasTokenInvalid, clearCanvasTokenError };
 };

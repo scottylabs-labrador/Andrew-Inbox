@@ -11,8 +11,10 @@ interface Props {
   lastFetch: Date | null;
   fetching: boolean;
   fetchError: string | null;
+  canvasTokenInvalid: boolean;
   onFetch: () => void;
   saveCanvasToken: (token: string) => Promise<string | null>;
+  onTokenSaved: () => void;
   onSignOut: () => void;
 }
 
@@ -32,12 +34,16 @@ export default function SettingsPanel({
   lastFetch,
   fetching,
   fetchError,
+  canvasTokenInvalid,
   onFetch,
   saveCanvasToken,
+  onTokenSaved,
   onSignOut,
 }: Props) {
   const [replacing, setReplacing] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
+  // A broken token opens the form straight away
+  const showForm = replacing || canvasTokenInvalid;
 
   return (
     <VStack gap={3} align="stretch">
@@ -89,21 +95,21 @@ export default function SettingsPanel({
       </Card>
 
       <Card title="Canvas">
-        <HStack justify="space-between" mb={replacing ? 3 : 0}>
+        <HStack justify="space-between" mb={showForm ? 3 : 0}>
           <HStack
             gap={1.5}
             px="10px"
             py={1}
             borderRadius="full"
-            bg="success.subtle"
-            color="success.fg"
+            bg={canvasTokenInvalid ? "red.subtle" : "success.subtle"}
+            color={canvasTokenInvalid ? "red.fg" : "success.fg"}
             fontSize="13px"
             fontWeight="semibold"
           >
-            <Box w="7px" h="7px" borderRadius="full" bg="success.fg" />
-            {justSaved ? "Token updated" : "Connected"}
+            <Box w="7px" h="7px" borderRadius="full" bg={canvasTokenInvalid ? "red.fg" : "success.fg"} />
+            {canvasTokenInvalid ? "Token not working" : justSaved ? "Token updated" : "Connected"}
           </HStack>
-          {!replacing && (
+          {!showForm && (
             <Button
               variant="plain"
               h="auto"
@@ -118,13 +124,20 @@ export default function SettingsPanel({
             </Button>
           )}
         </HStack>
-        {replacing && (
+        {canvasTokenInvalid && (
+          <Text fontSize="13px" lineHeight="1.5" color="red.fg" mb={3}>
+            Canvas didn't accept your token. It may have expired or been deleted. Make a new one and paste it
+            below.
+          </Text>
+        )}
+        {showForm && (
           <CanvasTokenForm
             saveCanvasToken={saveCanvasToken}
             submitLabel="Save new token"
             onSaved={() => {
               setReplacing(false);
               setJustSaved(true);
+              onTokenSaved();
             }}
           />
         )}
@@ -151,7 +164,7 @@ export default function SettingsPanel({
             Fetch now
           </Button>
         </HStack>
-        {fetchError && (
+        {fetchError && !canvasTokenInvalid && (
           <Text fontSize="13px" color="red.fg" mt={2}>
             {fetchError}
           </Text>
