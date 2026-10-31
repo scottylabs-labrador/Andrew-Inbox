@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: andrew-inbox-demo
+    runtime: static
+    branch: website
+    buildCommand: ""
+    staticPublishPath: ./website
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=3600
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
