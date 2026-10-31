@@ -3,6 +3,8 @@ import { Box, Center, Spinner, Text, VStack } from "@chakra-ui/react";
 import MainView from "./components/MainView";
 import LoginPage from "./components/Login";
 import CanvasTokenPage from "./components/CanvasTokenPage";
+import EdTokenPage from "./components/EdTokenPage";
+import { useState } from "react";
 import { useAuth } from "./components/hooks/useAuth";
 
 export interface Creds {
@@ -23,6 +25,9 @@ function App() {
     saveCanvasToken,
     saveEdToken,
   } = useAuth();
+  // After Canvas is connected during sign-up, offer the optional Ed step once
+  const [offerEd, setOfferEd] = useState(false);
+  const ed = { hasToken: profile?.hasEdToken ?? false, save: saveEdToken };
 
   let page;
   if (loading) {
@@ -54,16 +59,24 @@ function App() {
     page = (
       <CanvasTokenPage
         username={profile.username}
-        saveCanvasToken={saveCanvasToken}
+        saveCanvasToken={async (token) => {
+          // Set first so the inbox never flashes before the Ed step
+          setOfferEd(true);
+          const error = await saveCanvasToken(token);
+          if (error) setOfferEd(false);
+          return error;
+        }}
         onSignOut={signOut}
       />
     );
+  } else if (offerEd && !profile.hasEdToken) {
+    page = <EdTokenPage ed={ed} onDone={() => setOfferEd(false)} />;
   } else {
     page = (
       <MainView
         c={{ userId: profile.userId, username: profile.username }}
         saveCanvasToken={saveCanvasToken}
-        ed={{ hasToken: profile.hasEdToken, save: saveEdToken }}
+        ed={ed}
         onSignOut={signOut}
       />
     );

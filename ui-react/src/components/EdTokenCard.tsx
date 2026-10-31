@@ -1,9 +1,8 @@
-import { Box, Button, HStack, Input, Link, Text, VStack } from "@chakra-ui/react";
-import { useState, type FormEvent } from "react";
+import { Box, Button, HStack, Text, VStack } from "@chakra-ui/react";
+import { useState } from "react";
+import EdTokenForm, { EdTokenHelp } from "./EdTokenForm";
 import SettingsCard from "./SettingsCard";
 import type { EdTokenControls } from "./hooks/useAuth";
-
-const ED_TOKEN_PAGE = "https://edstem.org/us/settings/api-tokens";
 
 interface Props {
   ed: EdTokenControls;
@@ -29,29 +28,18 @@ function LinkButton({ label, onClick }: { label: string; onClick: () => void }) 
   );
 }
 
-// Optional: with an Ed token saved, fetches also pull Ed Discussion announcements
+// Optional: with an Ed token saved, fetches also pull Ed Discussion posts
 export default function EdTokenCard({ ed, invalid, onChanged }: Props) {
   const [editing, setEditing] = useState(false);
-  const [token, setToken] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const showForm = editing || invalid;
 
-  const save = async (value: string | null) => {
-    setSaving(true);
-    setError(null);
-    const err = await ed.save(value);
-    setSaving(false);
-    if (err) return setError(err);
-    setToken("");
+  const done = () => {
     setEditing(false);
     onChanged();
   };
 
-  const onSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (token.trim().length < 10) return setError("That doesn't look like an Ed token. Copy the whole thing.");
-    save(token);
+  const remove = async () => {
+    if (!(await ed.save(null))) done();
   };
 
   return (
@@ -73,69 +61,35 @@ export default function EdTokenCard({ ed, invalid, onChanged }: Props) {
           </HStack>
           <HStack gap={3}>
             {!showForm && <LinkButton label="Replace token" onClick={() => setEditing(true)} />}
-            {(!showForm || invalid) && <LinkButton label="Remove" onClick={() => save(null)} />}
+            {(!showForm || invalid) && <LinkButton label="Remove" onClick={remove} />}
           </HStack>
         </HStack>
       ) : (
         !showForm && (
           <HStack justify="space-between" gap={3}>
             <Text fontSize="13px" color="fg.muted">
-              Add your Ed token to also get Ed announcements.
+              Add your Ed token to also get Ed posts.
             </Text>
             <LinkButton label="Add token" onClick={() => setEditing(true)} />
           </HStack>
         )
       )}
 
-      {invalid && (
-        <Text fontSize="13px" lineHeight="1.5" color="red.fg" mb={3}>
-          Ed didn't accept your token. It may have expired or been deleted. Make a new one and paste it below.
-        </Text>
-      )}
-
       {showForm && (
-        <form onSubmit={onSubmit}>
-          <VStack gap={2} align="stretch">
-            <Text fontSize="13px" lineHeight="1.5" color="fg.muted">
-              Open{" "}
-              <Link href={ED_TOKEN_PAGE} target="_blank" color="brand.fg" fontWeight="semibold">
-                Ed's API token page
-              </Link>
-              , create a new token, then copy it here.
+        <VStack gap={2} align="stretch">
+          {invalid && (
+            <Text fontSize="13px" lineHeight="1.5" color="red.fg">
+              Ed didn't accept your token. It may have expired or been deleted. Make a new one.
             </Text>
-            <Input
-              type="password"
-              size="sm"
-              placeholder="Paste Ed token here…"
-              autoComplete="off"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              disabled={saving}
-            />
-            {error && (
-              <Text color="red.fg" fontSize="xs">
-                {error}
-              </Text>
-            )}
-            <HStack gap={2}>
-              <Button type="submit" colorPalette="brand" size="sm" flex={1} loading={saving}>
-                Save Ed token
-              </Button>
-              {!invalid && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setEditing(false);
-                    setError(null);
-                  }}
-                >
-                  Cancel
-                </Button>
-              )}
-            </HStack>
-          </VStack>
-        </form>
+          )}
+          <EdTokenHelp />
+          <EdTokenForm
+            save={ed.save}
+            onSaved={done}
+            submitLabel="Save Ed token"
+            onCancel={invalid ? undefined : () => setEditing(false)}
+          />
+        </VStack>
       )}
     </SettingsCard>
   );
