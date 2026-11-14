@@ -9,218 +9,316 @@ import {
   Collapsible,
   Text,
 } from "@chakra-ui/react";
-import { useTasks } from "../hooks/useTasks";
+import { useTasks, endOfDayIso, type Task } from "../hooks/useTasks";
 import TaskCard from "./TaskCard";
 import { LuPlus, LuChevronDown, LuChevronRight } from "react-icons/lu";
-import TaskForm from "./TaskForm";
-import { useState } from "react";
+import TaskForm, { type TaskFormData } from "./TaskForm";
+import { useState, type ReactNode } from "react";
 import type { Creds } from "@/App";
+import { getSemesterRange, isDueInWindow, isOverdue, startOfDay } from "@/dates";
 
 interface Props {
   filter: string;
+  courseFilter: string | null;
+  courses: string[];
   c: Creds | null;
+  refreshKey: number;
 }
 
 const emptyMessages: Record<string, string> = {
   All: "No assignments yet! Time to relax?  ☕️",
   Day: "Nothing due today!  🎉",
-  Week: "The rest of the week looks clear!  🏖️",
-  Month: "No deadlines in this month!  🗓️",
+  Week: "Nothing due in the next 7 days!  🏖️",
+  Month: "No deadlines in the next 30 days!  🗓️",
 };
 
-export default function TasksPage({ filter, c }: Props) {
-  const { todos, loading, addAssignment, toggleAssignment } = useTasks(
-    c?.username,
+const pad = (n: number) => String(n).padStart(2, "0");
+const toDay = (d: Date) =>
+  `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+// "Today · Oct 29", "Tomorrow · Oct 30", "Sat · Nov 1"
+function dayLabel(day: Date, now: Date) {
+  const date = day.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const diff = Math.round((day.getTime() - startOfDay(now).getTime()) / 864e5);
+  if (diff === 0) return `Today · ${date}`;
+  if (diff === 1) return `Tomorrow · ${date}`;
+  return `${day.toLocaleDateString("en-US", { weekday: "short" })} · ${date}`;
+}
+
+function GroupHeader({
+  title,
+  count,
+  color = "fg.muted",
+  open,
+  setOpen,
+}: {
+  title: string;
+  count: number;
+  color?: string;
+  // Only Overdue and Done fold up
+  open?: boolean;
+  setOpen?: (open: boolean) => void;
+}) {
+  const foldable = !!setOpen;
+  return (
+    <HStack
+      as={foldable ? "button" : "div"}
+      justify="space-between"
+      w="100%"
+      pt={2}
+      px="2px"
+      cursor={foldable ? "pointer" : undefined}
+      onClick={foldable ? () => setOpen(!open) : undefined}
+      aria-expanded={foldable ? open : undefined}
+      fontSize="11px"
+      fontWeight="semibold"
+      letterSpacing="0.08em"
+      textTransform="uppercase"
+      color={color}
+    >
+      <HStack gap={1}>
+        {foldable && (open ? <LuChevronDown /> : <LuChevronRight />)}
+        <Text>{title}</Text>
+      </HStack>
+      <Text fontFamily="mono" letterSpacing={0} color="fg.subtle">
+        {count}
+      </Text>
+    </HStack>
   );
-  const [isOpen, setIsOpen] = useState(false);
+}
+
+function Section({
+  title,
+  count,
+  color,
+  open,
+  setOpen,
+  children,
+}: {
+  title: string;
+  count: number;
+  color: string;
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  children: ReactNode;
+}) {
+  return (
+    <Box w="100%">
+      <GroupHeader title={title} count={count} color={color} open={open} setOpen={setOpen} />
+      <Collapsible.Root open={open}>
+        <Collapsible.Content>
+          <VStack gap={2} align="stretch" pt={2}>
+            {children}
+          </VStack>
+        </Collapsible.Content>
+      </Collapsible.Root>
+    </Box>
+  );
+}
+
+export default function TasksPage({
+  filter,
+  courseFilter,
+  courses,
+  c,
+  refreshKey,
+}: Props) {
+  const {
+    todos,
+    loading,
+    addAssignment,
+    toggleAssignment,
+    updateAssignment,
+    deleteAssignment,
+  } = useTasks(c?.userId, refreshKey);
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [editing, setEditing] = useState<Task | null>(null);
   const [isOverdueOpen, setIsOverdueOpen] = useState(true);
-
-  const getSemesterRange = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-
-    if (now >= new Date(year, 11, 21) || now <= new Date(year, 5, 7)) {
-      const startYear = now.getMonth() === 11 ? year : year - 1;
-      const endYear = now.getMonth() === 11 ? year + 1 : year;
-      return {
-        start: new Date(startYear, 11, 21),
-        end: new Date(endYear, 5, 7),
-      };
-    }
-    if (now >= new Date(year, 7, 25) && now <= new Date(year, 11, 20)) {
-      return { start: new Date(year, 7, 25), end: new Date(year, 11, 20) };
-    }
-    return { start: new Date(year, 5, 8), end: new Date(year, 5, 24) };
-  };
+  const [isDoneOpen, setIsDoneOpen] = useState(false);
 
   if (loading) {
     return (
       <Center h="200px">
-        <HStack>
-          <Text> Loading </Text>
-          <Spinner color="blue.500" />
-        </HStack>
+        <Spinner color="brand.solid" />
       </Center>
     );
   }
 
   const { start, end } = getSemesterRange();
-  const todayDate = new Date();
-  todayDate.setHours(0, 0, 0, 0);
+  const now = new Date();
 
-  const filteredTodos = todos.filter((task) => {
-    if (task.userId !== c?.username) return false;
+  const semesterTodos = todos.filter(
+    (task) =>
+      task.userId === c?.userId &&
+      task.due >= start &&
+      task.due < end &&
+      (!courseFilter || task.course === courseFilter),
+  );
 
-    const taskDate = new Date(task.due);
-    taskDate.setHours(0, 0, 0, 0);
+  const byDueDate = (a: Task, b: Task) => a.due.getTime() - b.due.getTime();
 
-    const semesterStart = new Date(start);
-    semesterStart.setHours(0, 0, 0, 0);
-    const semesterEnd = new Date(end);
-    semesterEnd.setHours(0, 0, 0, 0);
+  // Overdue work always shows, whatever the Day/Week/Month filter
+  const overdueTasks = semesterTodos
+    .filter((t) => isOverdue(t.due, t.status, now))
+    .sort(byDueDate);
 
-    if (taskDate < semesterStart || taskDate > semesterEnd) return false;
+  const filteredTodos = semesterTodos.filter(
+    (t) => !isOverdue(t.due, t.status, now) && isDueInWindow(t.due, filter, now),
+  );
 
-    const isOverdue = taskDate < todayDate && !task.status;
-    if (isOverdue) return true;
+  const upcomingTasks = filteredTodos.filter((t) => !t.status).sort(byDueDate);
 
-    if (filter === "All") return true;
+  // Submitted / checked-off work, most recent first
+  const doneTasks = filteredTodos
+    .filter((t) => t.status)
+    .sort((a, b) => byDueDate(b, a));
 
-    if (filter === "Day") {
-      return taskDate.getTime() === todayDate.getTime();
-    }
+  // Upcoming work grouped under one heading per day, in order
+  const days = new Map<number, Task[]>();
+  for (const task of upcomingTasks) {
+    const day = startOfDay(task.due).getTime();
+    days.set(day, [...(days.get(day) ?? []), task]);
+  }
 
-    if (filter === "Week") {
-      const nextSunday = new Date(todayDate);
-      nextSunday.setDate(todayDate.getDate() + (6 - todayDate.getDay()));
-      return taskDate >= todayDate && taskDate <= nextSunday;
-    }
+  const card = (task: Task, timeOnly = false) => (
+    <TaskCard
+      key={task.id}
+      taskd={task}
+      timeOnly={timeOnly}
+      onToggle={() => toggleAssignment(task.id)}
+      onEdit={task.platform === "manual" ? () => setEditing(task) : undefined}
+    />
+  );
 
-    if (filter === "Month") {
-      return (
-        taskDate.getMonth() === todayDate.getMonth() &&
-        taskDate.getFullYear() === todayDate.getFullYear() &&
-        taskDate >= todayDate
-      );
-    }
-
-    return false;
-  });
-
-  const overdueTasks = filteredTodos
-    .filter((t) => {
-      const d = new Date(t.due);
-      const taskDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-      return taskDate < todayDate && !t.status;
-    })
-    .sort((a, b) => new Date(a.due).getTime() - new Date(b.due).getTime());
-
-  const upcomingTasks = filteredTodos
-    .filter((t) => !overdueTasks.some((ot) => ot.id === t.id))
-    .sort((a, b) => {
-      if (a.status !== b.status) return a.status ? 1 : -1;
-      return new Date(a.due).getTime() - new Date(b.due).getTime();
-    });
+  const dialog = (
+    open: boolean,
+    onOpenChange: (open: boolean) => void,
+    content: ReactNode,
+  ) => (
+    <Dialog.Root
+      size="sm"
+      open={open}
+      onOpenChange={(e) => onOpenChange(e.open)}
+      placement="center"
+    >
+      <Dialog.Backdrop bg="rgba(10,7,7,.72)" />
+      <Dialog.Positioner>
+        <Dialog.Content
+          // The popup is only 400px wide: leave a 16px gutter each side
+          w="calc(100% - 32px)"
+          mx="auto"
+          bg="bg.panel"
+          borderWidth="1px"
+          borderColor="border"
+          borderRadius="14px"
+          boxShadow="0 24px 48px -12px rgba(0,0,0,.6)"
+        >
+          {content}
+        </Dialog.Content>
+      </Dialog.Positioner>
+    </Dialog.Root>
+  );
 
   return (
     <>
-      <Dialog.Root
-        size="sm"
-        open={isOpen}
-        onOpenChange={(e) => setIsOpen(e.open)}
-        placement="center"
-      >
-        <VStack gap={3} align="stretch" w="100%" p={4}>
-          {overdueTasks.length > 0 && (
-            <Box w="100%">
-              <HStack
-                cursor="pointer"
-                onClick={() => setIsOverdueOpen(!isOverdueOpen)}
-                mb={2}
-                color="red.400"
-                fontSize="xs"
-                fontWeight="bold"
-                textTransform="uppercase"
-                letterSpacing="wider"
-              >
-                {isOverdueOpen ? <LuChevronDown /> : <LuChevronRight />}
-                <Text>Overdue ({overdueTasks.length})</Text>
-              </HStack>
+      {/* pb leaves room so the floating + button doesn't cover the last card */}
+      <VStack gap={2} align="stretch" w="100%" pb="72px">
+        {[...days].map(([day, tasks]) => (
+          <VStack key={day} gap={2} align="stretch">
+            <GroupHeader title={dayLabel(new Date(day), now)} count={tasks.length} />
+            {tasks.map((t) => card(t, true))}
+          </VStack>
+        ))}
 
-              <Collapsible.Root open={isOverdueOpen}>
-                <Collapsible.Content>
-                  <VStack gap={3} align="stretch" mb={4}>
-                    {overdueTasks.map((task) => (
-                      <TaskCard
-                        key={task.id}
-                        taskd={task}
-                        onToggle={() => toggleAssignment(task.id)}
-                      />
-                    ))}
-                  </VStack>
-                </Collapsible.Content>
-              </Collapsible.Root>
-            </Box>
-          )}
-
-          {upcomingTasks.length > 0
-            ? upcomingTasks.map((task) => (
-                <TaskCard
-                  key={task.id}
-                  taskd={task}
-                  onToggle={() => toggleAssignment(task.id)}
-                />
-              ))
-            : null}
-
-          {upcomingTasks.length === 0 && overdueTasks.length === 0 && (
-            <Center py={10} flexDirection="column">
-              <Text color="gray.500" textAlign="center">
-                {emptyMessages[filter] || emptyMessages.All}
-              </Text>
-            </Center>
-          )}
-        </VStack>
-
-        <Box position="absolute" bottom="4" right="4">
-          <Dialog.Trigger asChild>
-            <IconButton
-              borderRadius="full"
-              boxShadow="lg"
-              colorPalette="blue"
-              size="xl"
-              aria-label="add"
-            >
-              <LuPlus />
-            </IconButton>
-          </Dialog.Trigger>
-        </Box>
-
-        <Dialog.Backdrop />
-        <Dialog.Positioner
-          position="absolute"
-          top="0"
-          left="0"
-          width="100%"
-          height="100%"
-        >
-          <Dialog.Content
-            bg="gray.700"
-            border="1px solid"
-            borderColor="gray.600"
-            mx="4"
-            borderRadius="lg"
-            boxShadow="0 10px 30px rgba(0,0,0,0.5)"
+        {/* Overdue and done go last so what's due next is at the top */}
+        {overdueTasks.length > 0 && (
+          <Section
+            title="Overdue"
+            count={overdueTasks.length}
+            color="red.fg"
+            open={isOverdueOpen}
+            setOpen={setIsOverdueOpen}
           >
-            <TaskForm
-              onSubmit={(data) => {
-                setIsOpen(false);
-                addAssignment(data, c?.username || "unnamed");
-              }}
-            />
-          </Dialog.Content>
-        </Dialog.Positioner>
-      </Dialog.Root>
+            {overdueTasks.map((t) => card(t))}
+          </Section>
+        )}
+
+        {doneTasks.length > 0 && (
+          <Section
+            title="Done"
+            count={doneTasks.length}
+            color="fg.muted"
+            open={isDoneOpen}
+            setOpen={setIsDoneOpen}
+          >
+            {doneTasks.map((t) => card(t))}
+          </Section>
+        )}
+
+        {upcomingTasks.length === 0 && overdueTasks.length === 0 && (
+          <Center py={10}>
+            <Text color="fg.muted" textAlign="center" fontSize="sm">
+              {emptyMessages[filter] || emptyMessages.All}
+            </Text>
+          </Center>
+        )}
+      </VStack>
+
+      <Box position="absolute" bottom="4" right="4">
+        <IconButton
+          boxSize="52px"
+          borderRadius="full"
+          colorPalette="brand"
+          boxShadow="0 10px 24px -6px rgba(158,42,47,.6), inset 0 1px 0 rgba(255,255,255,.15)"
+          _hover={{ bg: "brand.emphasized" }}
+          css={{ "& svg": { width: "22px", height: "22px" } }}
+          aria-label="Add assignment"
+          title="Add assignment"
+          onClick={() => setIsAddOpen(true)}
+        >
+          <LuPlus />
+        </IconButton>
+      </Box>
+
+      {dialog(
+        isAddOpen,
+        setIsAddOpen,
+        <TaskForm
+          courses={courses}
+          onSubmit={(data) => {
+            setIsAddOpen(false);
+            if (c) addAssignment(data, c.userId);
+          }}
+        />,
+      )}
+
+      {dialog(
+        !!editing,
+        (open) => !open && setEditing(null),
+        editing && (
+          <TaskForm
+            key={editing.id}
+            courses={courses}
+            initial={{
+              assignment: editing.assignment,
+              course: editing.course,
+              due: toDay(editing.due),
+            }}
+            onSubmit={(data: TaskFormData) => {
+              updateAssignment(editing.id, {
+                assignment: data.assignment,
+                course: data.course,
+                due: new Date(endOfDayIso(data.due)),
+              });
+              setEditing(null);
+            }}
+            onDelete={() => {
+              deleteAssignment(editing.id);
+              setEditing(null);
+            }}
+          />
+        ),
+      )}
     </>
   );
 }

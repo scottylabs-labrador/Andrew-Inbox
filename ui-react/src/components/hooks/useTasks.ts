@@ -1,5 +1,6 @@
 import { supabase } from "@/supabaseClient";
 import { useState, useEffect } from "react";
+import { KEEP_DONE_DAYS, addDays } from "@/dates";
 
 export interface Task {
   id: string;
@@ -12,16 +13,19 @@ export interface Task {
   userId: string;
 }
 
-// Pass the current user's username/ID to the hook
-export const useTasks = (currentUsername?: string) => {
+// "YYYY-MM-DD" from the task form -> 11:59 PM that day in the user's timezone
+export const endOfDayIso = (day: string) =>
+  new Date(`${day}T23:59:00`).toISOString();
+
+// Pass the signed-in user's id to the hook
+export const useTasks = (currentUsername?: string, refreshKey = 0) => {
   const [todos, setTodos] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const parseLocalDatePicker = (dateStr: string | null | undefined) => {
-    if (!dateStr) return new Date();
-    const dateOnly = dateStr.split("T")[0];
-    return new Date(dateOnly.replace(/-/g, "/"));
-  };
+  // Keep the full timestamp. Cutting it to the date part used the UTC date, so
+  // 11:59 PM Eastern (03:59 UTC the next day) showed up as due tomorrow.
+  const parseDueDate = (dateStr: string | null | undefined) =>
+    dateStr ? new Date(dateStr) : new Date();
 
   const fetchTasks = async () => {
     if (!currentUsername) {
@@ -44,21 +48,37 @@ export const useTasks = (currentUsername?: string) => {
         id: row.assignment_id || `temp-${Math.random()}`,
         assignment: row.assignment_name,
         course: row.course_name,
-        due: parseLocalDatePicker(row.due_date),
+        due: parseDueDate(row.due_date),
         status: row.status || false,
         points: row.points_possible,
         platform: row.platform,
         userId: row.user_id,
       }));
-      setTodos(hydratedData);
+      // Finished work more than a month old is dropped from the list and the
+      // database (the backend skips re-saving it on the next fetch).
+      const cutoff = addDays(new Date(), -KEEP_DONE_DAYS);
+      const stale = hydratedData.filter((t) => t.status && t.due < cutoff);
+      if (stale.length) {
+        supabase
+          .from("assignments_duplicate")
+          .delete()
+          .in(
+            "assignment_id",
+            stale.map((t) => t.id),
+          )
+          .then(({ error: deleteError }) => {
+            if (deleteError) console.error("Cleanup error:", deleteError);
+          });
+      }
+      setTodos(hydratedData.filter((t) => !stale.includes(t)));
     }
     setLoading(false);
   };
 
-  // Re-fetch whenever the user logs in or changes
+  // Re-fetch whenever the user logs in or changes, or after a sync
   useEffect(() => {
     fetchTasks();
-  }, [currentUsername]);
+  }, [currentUsername, refreshKey]);
 
   const addAssignment = async (
     data: {
@@ -74,8 +94,8 @@ export const useTasks = (currentUsername?: string) => {
       ? crypto.randomUUID()
       : (Date.now() + Math.random()).toString();
 
-    const localDate = new Date(data.due.replace(/-/g, "/"));
-    const isoDate = localDate.toISOString();
+    // The form gives "YYYY-MM-DD"; treat hand-added work as due 11:59 PM that day
+    const isoDate = endOfDayIso(data.due);
 
     const { data: insertedData, error } = await supabase
       .from("assignments_duplicate")
@@ -102,7 +122,7 @@ export const useTasks = (currentUsername?: string) => {
         id: newRow.assignment_id,
         assignment: newRow.assignment_name,
         course: newRow.course_name,
-        due: parseLocalDatePicker(newRow.due_date),
+        due: parseDueDate(newRow.due_date),
         status: newRow.status,
         points: newRow.points_possible,
         platform: newRow.platform,
@@ -157,12 +177,22 @@ export const useTasks = (currentUsername?: string) => {
     }
   };
 
+  const deleteAssignment = async (id: string) => {
+    const { error } = await supabase
+      .from("assignments_duplicate")
+      .delete()
+      .eq("assignment_id", id);
+    if (error) console.error("Delete error:", error);
+    else setTodos((prev) => prev.filter((t) => t.id !== id));
+  };
+
   return {
     todos,
     loading,
     addAssignment,
     toggleAssignment,
     updateAssignment,
+    deleteAssignment,
     fetchTasks,
   };
 };

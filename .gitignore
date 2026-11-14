@@ -7,3 +7,11 @@ node_modules/
 # Environment
 .env
 .dist/
+
+# Python virtual environments (each person creates their own)
+.venv/
+venv/
+
+# Zipped extension (made by `npm run extension`). The unzipped
+# andrew-inbox-extension/ folder IS committed, so people can load it without Node.
+andrew-inbox-extension.zip

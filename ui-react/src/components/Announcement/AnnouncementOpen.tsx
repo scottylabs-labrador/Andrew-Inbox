@@ -1,13 +1,15 @@
-import { Box, Button, Dialog, HStack, VStack, Link } from "@chakra-ui/react";
-import type { Announce } from "../hooks/useAnnounce";
-import { LuExternalLink } from "react-icons/lu";
+import { Box, Button, Dialog, HStack, IconButton, Text, Link } from "@chakra-ui/react";
+import { AI_NOTE, platformName, type Announce } from "../hooks/useAnnounce";
+import { LuExternalLink, LuX } from "react-icons/lu";
+import { useCourseColor } from "@/courseColors";
 
 interface Props {
   a: Announce;
-  onToggle: () => void;
+  onMarkUnread: () => void;
 }
 
-export default function AnnoucementOpen({ a, onToggle }: Props) {
+export default function AnnoucementOpen({ a, onMarkUnread }: Props) {
+  const dotColor = useCourseColor(a.course);
   const formattedDate = new Date(a.date).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -16,117 +18,91 @@ export default function AnnoucementOpen({ a, onToggle }: Props) {
 
   return (
     <>
-      <Dialog.Header
-        bg="gray.700"
-        borderTopRadius="lg"
-        borderBottom="1px solid"
-        borderColor="gray.600"
-        py={6}
-        px={4}
-      >
-        <VStack gap={2} w="100%" align="center" textAlign="center">
-          <Dialog.Title
-            fontSize="lg"
-            fontWeight="bold"
-            color="white"
-            lineClamp={2}
-          >
-            {a.title}
-          </Dialog.Title>
-
-          <HStack gap={3} justify="center">
-            <Box
-              fontSize="xs"
-              color="blue.400"
-              fontWeight="bold"
-              letterSpacing="wider"
+      <Box px="18px" pt="18px" pb={4} borderBottomWidth="1px" borderColor="border.muted">
+        <HStack justify="space-between" mb="10px">
+          <HStack gap={2} fontSize="12px" color="fg.muted" minW={0}>
+            <HStack
+              gap={1.5}
+              px={2}
+              py="3px"
+              borderRadius="full"
+              bg="bg.muted"
+              color="fg"
+              fontFamily="mono"
+              flexShrink={0}
             >
-              {a.course.toUpperCase()}
-            </Box>
-            <Box w="1px" h="12px" bg="gray.600" />
-            <Box fontSize="xs" color="gray.500">
+              <Box w="7px" h="7px" borderRadius="full" bg={dotColor} />
+              {a.course}
+            </HStack>
+            <Text truncate>
+              {a.platform ? `${platformName(a.platform)} · ` : ""}
               {formattedDate}
-            </Box>
+            </Text>
           </HStack>
-        </VStack>
-      </Dialog.Header>
+          <Dialog.CloseTrigger asChild position="static">
+            <IconButton size="xs" variant="ghost" color="fg.muted" aria-label="Close">
+              <LuX />
+            </IconButton>
+          </Dialog.CloseTrigger>
+        </HStack>
+        <Dialog.Title fontSize="22px" fontWeight="bold" letterSpacing="-0.015em" lineHeight="1.25">
+          {a.title}
+        </Dialog.Title>
+      </Box>
 
-      <Dialog.Body bg="gray.700" py={8} px={6}>
-        <Box
-          color="gray.200"
-          fontSize="sm"
-          lineHeight="1.6"
-          whiteSpace="pre-wrap"
-        >
+      <Box px="18px" py={4} display="flex" flexDirection="column" gap="14px">
+        <Box fontSize="15px" lineHeight="1.55" whiteSpace="pre-wrap" maxH="260px" overflowY="auto">
           {a.description}
         </Box>
-      </Dialog.Body>
-
-      <Dialog.Footer
-        bg="gray.700"
-        borderBottomRadius="lg"
-        borderTop="1px solid"
-        borderColor="gray.600"
-        p={3}
-      >
-        <HStack w="100%" justify="center" gap={3} wrap="nowrap">
-          {a.link && (
-            <Link
-              href={a.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              _hover={{ textDecoration: "none" }}
-              flex="0 0 auto"
-            >
-              <Button
-                variant="outline"
-                borderColor="blue.500"
-                color="blue.400"
-                size="sm"
-                fontSize="xs"
-                h="32px"
-                px={3}
-                cursor="pointer"
-                _hover={{ bg: "blue.900", borderColor: "blue.400" }}
-              >
-                Link <LuExternalLink size={12} style={{ marginLeft: "4px" }} />
-              </Button>
-            </Link>
-          )}
-
-          {a.is_read && (
-            <Button
-              variant="subtle"
-              colorPalette="blue"
-              size="sm"
-              fontSize="xs"
-              h="32px"
-              px={3}
-              flex="1"
-              maxWidth="130px"
-              onClick={onToggle}
-              whiteSpace="nowrap"
-            >
-              Mark as Unread
-            </Button>
-          )}
-
-          <Dialog.ActionTrigger asChild>
-            <Button
-              variant="ghost"
-              color="gray.400"
-              size="sm"
-              fontSize="xs"
-              h="32px"
-              px={3}
-              flex="0 0 auto"
-              _hover={{ bg: "gray.800", color: "white" }}
-            >
-              Close
-            </Button>
-          </Dialog.ActionTrigger>
+        <HStack
+          align="start"
+          gap={2}
+          px={3}
+          py="10px"
+          bg="bg"
+          borderRadius="8px"
+          fontSize="12px"
+          lineHeight="1.45"
+          color="fg.muted"
+        >
+          <Text fontFamily="mono" fontWeight="bold" fontSize="10.5px" color="fg" pt="1px">
+            AI
+          </Text>
+          <Text>{AI_NOTE}</Text>
         </HStack>
-      </Dialog.Footer>
+      </Box>
+
+      <HStack px="18px" pb="18px" gap={2}>
+        {a.link && (
+          <Button
+            asChild
+            flex={1}
+            h={10}
+            colorPalette="brand"
+            borderRadius="9px"
+            fontSize="14px"
+            fontWeight="semibold"
+            _hover={{ bg: "brand.emphasized" }}
+          >
+            <Link href={a.link} target="_blank" rel="noopener noreferrer" textDecoration="none">
+              Open original <LuExternalLink />
+            </Link>
+          </Button>
+        )}
+        <Button
+          variant="outline"
+          flex={a.link ? undefined : 1}
+          h={10}
+          px={4}
+          borderRadius="9px"
+          borderColor="border"
+          fontSize="14px"
+          fontWeight="semibold"
+          onClick={onMarkUnread}
+        >
+          Mark unread
+        </Button>
+      </HStack>
     </>
   );
 }

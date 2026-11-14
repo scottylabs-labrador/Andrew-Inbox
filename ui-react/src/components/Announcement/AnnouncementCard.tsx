@@ -1,83 +1,60 @@
-import { Box, Text, HStack, Link } from "@chakra-ui/react";
-import type { Announce } from "../hooks/useAnnounce";
-import { LuExternalLink } from "react-icons/lu";
+import { Box, Text, HStack } from "@chakra-ui/react";
+import { platformName, type Announce } from "../hooks/useAnnounce";
+import { useCourseColor } from "@/courseColors";
 
 interface Props {
   ann: Announce;
 }
 
 export default function AnnouncementCard({ ann }: Props) {
+  const dotColor = useCourseColor(ann.course);
   const displayDate = new Date(ann.date).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
   });
 
   return (
-    <Box bg="gray.700" borderRadius="lg" px={4} py={3} w="100%">
-      <HStack gap={3} align="start">
-        <Box pt={2} flexShrink={0}>
-          <Box
-            w={2}
-            h={2}
-            borderRadius="full"
-            bg={!ann.is_read ? "blue.400" : "transparent"}
-          />
-        </Box>
+    <HStack
+      gap="10px"
+      align="start"
+      bg="bg.panel"
+      borderWidth="1px"
+      borderColor="border.muted"
+      borderRadius="10px"
+      py={3}
+      pl={3}
+      pr="14px"
+      w="100%"
+      _hover={{ borderColor: "border.emphasized" }}
+      transition="border-color 0.15s"
+    >
+      {/* Unread dot */}
+      <Box w={2} pt="6px" flexShrink={0}>
+        {!ann.is_read && <Box w={2} h={2} borderRadius="full" bg="brand.dot" />}
+      </Box>
 
-        <Box
-          w={8}
-          h={8}
-          borderRadius="full"
-          bg="gray.500"
-          flexShrink={0}
-          overflow="hidden"
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <Text fontSize="xs" color="white">
-            {ann.platform ? ann.platform.charAt(0).toUpperCase() : "P"}
+      <Box flex={1} minW={0} display="flex" flexDirection="column" gap="5px">
+        <HStack align="baseline" gap="10px">
+          <Text flex={1} minW={0} fontSize="14.5px" fontWeight={ann.is_read ? "medium" : "bold"} truncate>
+            {ann.title}
           </Text>
-        </Box>
-
-        <Box flex={1} minW={0}>
-          <HStack justify="space-between" align="baseline">
-            <Text color="white" fontWeight="bold" fontSize="sm" lineClamp={1}>
-              {ann.title}
-            </Text>
-            <Text color="gray.500" fontSize="2xs" flexShrink={0}>
-              {displayDate}
-            </Text>
-          </HStack>
-
-          <HStack gap={1} mb={1}>
-            <Box w={2} h={2} borderRadius="full" bg="red.400" />
-            <Text color="gray.400" fontSize="xs">
-              {ann.course}
-            </Text>
-          </HStack>
-
-          <Text color="gray.300" fontSize="xs" lineHeight="short" lineClamp={2}>
-            {ann.description}
+          <Text color="fg.subtle" fontSize="12px" flexShrink={0}>
+            {displayDate}
           </Text>
+        </HStack>
 
-          {ann.link && (
-            <Link
-              href={ann.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              color="blue.400"
-              fontSize="2xs"
-              display="flex"
-              alignItems="center"
-              gap={1}
-              _hover={{ textDecoration: "underline", color: "blue.300" }}
-            >
-              View Original <LuExternalLink size={10} />
-            </Link>
-          )}
-        </Box>
-      </HStack>
-    </Box>
+        <HStack gap={1.5} fontSize="11.5px" color="fg.muted">
+          <Box w="7px" h="7px" borderRadius="full" bg={dotColor} flexShrink={0} />
+          <Text fontFamily="mono" whiteSpace="nowrap">
+            {ann.course}
+          </Text>
+          {ann.platform && <Text>· {platformName(ann.platform)}</Text>}
+        </HStack>
+
+        <Text color="fg.muted" fontSize="13px" lineHeight="1.45" lineClamp={2}>
+          {ann.description}
+        </Text>
+      </Box>
+    </HStack>
   );
 }
