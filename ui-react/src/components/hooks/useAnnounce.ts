@@ -21,27 +21,44 @@ export interface Announce {
   is_read: boolean;
 }
 
+// The announcements, or null if Supabase returned an error
+const loadAnnouncements = async (): Promise<Announce[] | null> => {
+  const { data, error } = await supabase
+    .from("announcements")
+    .select("*")
+    .order("date", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching announcements:", error.message);
+    return null;
+  }
+  return data || [];
+};
+
 export const useAnnounce = (refreshKey = 0) => {
   const [ann, setAnn] = useState<Announce[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  // Loading until the fetch for this refresh has come back (derived, so the
+  // spinner shows on the very first render after a sync)
+  const [loadedKey, setLoadedKey] = useState<number | null>(null);
+  const loading = loadedKey !== refreshKey;
 
   const fetchAnnouncements = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("announcements")
-      .select("*")
-      .order("date", { ascending: false });
-
-    if (error) {
-      console.error("Error fetching announcements:", error.message);
-    } else {
-      setAnn(data || []);
-    }
-    setLoading(false);
+    const result = await loadAnnouncements();
+    if (result) setAnn(result);
   };
 
   useEffect(() => {
-    fetchAnnouncements();
+    let cancelled = false;
+    loadAnnouncements().then((result) => {
+      // A later sync has started a newer fetch; drop this one
+      if (cancelled) return;
+      if (result) setAnn(result);
+      setLoadedKey(refreshKey);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [refreshKey]);
 
   const toggleAnnounce = async (id: string, currentStatus: boolean) => {

@@ -17,68 +17,90 @@ export interface Task {
 export const endOfDayIso = (day: string) =>
   new Date(`${day}T23:59:00`).toISOString();
 
+// A row of the assignments_duplicate table (supabase/schema.sql)
+interface AssignmentRow {
+  assignment_id: string | null;
+  assignment_name: string;
+  course_name: string;
+  due_date: string | null;
+  status: boolean | null;
+  points_possible: number | null;
+  platform: string | null;
+  user_id: string;
+}
+
+// Keep the full timestamp. Cutting it to the date part used the UTC date, so
+// 11:59 PM Eastern (03:59 UTC the next day) showed up as due tomorrow.
+const parseDueDate = (dateStr: string | null | undefined) =>
+  dateStr ? new Date(dateStr) : new Date();
+
+// The user's assignments, or null if Supabase returned an error
+const loadTasks = async (userId: string): Promise<Task[] | null> => {
+  const { data, error } = await supabase
+    .from("assignments_duplicate")
+    .select("*")
+    .eq("user_id", userId)
+    .order("due_date", { ascending: true })
+    .limit(2000);
+
+  if (error) {
+    console.error("Fetch error:", error);
+    return null;
+  }
+  const hydratedData: Task[] = ((data ?? []) as AssignmentRow[]).map((row) => ({
+    id: row.assignment_id || `temp-${Math.random()}`,
+    assignment: row.assignment_name,
+    course: row.course_name,
+    due: parseDueDate(row.due_date),
+    status: row.status || false,
+    points: row.points_possible,
+    platform: row.platform,
+    userId: row.user_id,
+  }));
+  // Finished work more than a month old is dropped from the list and the
+  // database (the backend skips re-saving it on the next fetch).
+  const cutoff = addDays(new Date(), -KEEP_DONE_DAYS);
+  const stale = hydratedData.filter((t) => t.status && t.due < cutoff);
+  if (stale.length) {
+    supabase
+      .from("assignments_duplicate")
+      .delete()
+      .in(
+        "assignment_id",
+        stale.map((t) => t.id),
+      )
+      .then(({ error: deleteError }) => {
+        if (deleteError) console.error("Cleanup error:", deleteError);
+      });
+  }
+  return hydratedData.filter((t) => !stale.includes(t));
+};
+
 // Pass the signed-in user's id to the hook
 export const useTasks = (currentUsername?: string, refreshKey = 0) => {
   const [todos, setTodos] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  // Keep the full timestamp. Cutting it to the date part used the UTC date, so
-  // 11:59 PM Eastern (03:59 UTC the next day) showed up as due tomorrow.
-  const parseDueDate = (dateStr: string | null | undefined) =>
-    dateStr ? new Date(dateStr) : new Date();
-
-  const fetchTasks = async () => {
-    if (!currentUsername) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("assignments_duplicate")
-      .select("*")
-      .eq("user_id", currentUsername)
-      .order("due_date", { ascending: true })
-      .limit(2000);
-
-    if (error) {
-      console.error("Fetch error:", error);
-    } else if (data) {
-      const hydratedData = data.map((row: any) => ({
-        id: row.assignment_id || `temp-${Math.random()}`,
-        assignment: row.assignment_name,
-        course: row.course_name,
-        due: parseDueDate(row.due_date),
-        status: row.status || false,
-        points: row.points_possible,
-        platform: row.platform,
-        userId: row.user_id,
-      }));
-      // Finished work more than a month old is dropped from the list and the
-      // database (the backend skips re-saving it on the next fetch).
-      const cutoff = addDays(new Date(), -KEEP_DONE_DAYS);
-      const stale = hydratedData.filter((t) => t.status && t.due < cutoff);
-      if (stale.length) {
-        supabase
-          .from("assignments_duplicate")
-          .delete()
-          .in(
-            "assignment_id",
-            stale.map((t) => t.id),
-          )
-          .then(({ error: deleteError }) => {
-            if (deleteError) console.error("Cleanup error:", deleteError);
-          });
-      }
-      setTodos(hydratedData.filter((t) => !stale.includes(t)));
-    }
-    setLoading(false);
-  };
+  // Loading until the fetch for this user + refresh has come back. Deriving it
+  // (instead of setLoading(true) in the effect) shows the spinner on the very
+  // first render after a login or sync.
+  const fetchKey = `${currentUsername ?? ""}|${refreshKey}`;
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
+  const loading = Boolean(currentUsername) && loadedKey !== fetchKey;
 
   // Re-fetch whenever the user logs in or changes, or after a sync
   useEffect(() => {
-    fetchTasks();
-  }, [currentUsername, refreshKey]);
+    if (!currentUsername) return;
+    let cancelled = false;
+    loadTasks(currentUsername).then((tasks) => {
+      // A newer fetch (other user / later sync) has started; drop this one
+      if (cancelled) return;
+      if (tasks) setTodos(tasks);
+      setLoadedKey(fetchKey);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUsername, fetchKey]);
 
   const addAssignment = async (
     data: {
@@ -157,7 +179,7 @@ export const useTasks = (currentUsername?: string, refreshKey = 0) => {
   };
 
   const updateAssignment = async (id: string, updatedFields: Partial<Task>) => {
-    const dbPayload: any = {};
+    const dbPayload: Partial<AssignmentRow> = {};
     if (updatedFields.assignment)
       dbPayload.assignment_name = updatedFields.assignment;
     if (updatedFields.course) dbPayload.course_name = updatedFields.course;
@@ -193,6 +215,5 @@ export const useTasks = (currentUsername?: string, refreshKey = 0) => {
     toggleAssignment,
     updateAssignment,
     deleteAssignment,
-    fetchTasks,
   };
 };
