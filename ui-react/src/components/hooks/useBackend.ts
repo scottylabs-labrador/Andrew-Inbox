@@ -29,6 +29,8 @@ export const useBackend = (userId?: string) => {
   const [error, setError] = useState<string | null>(null);
   // Canvas rejected the saved token, so the user needs to paste a new one
   const [canvasTokenInvalid, setCanvasTokenInvalid] = useState(false);
+  // Optional sources (like Ed) don't stop a fetch; the backend lists them as warnings
+  const [edTokenInvalid, setEdTokenInvalid] = useState(false);
 
   const executeSync = useCallback(async () => {
     setLoading(true);
@@ -65,7 +67,9 @@ export const useBackend = (userId?: string) => {
           // Storage unavailable: it just fetches again next time
         }
       }
-      return await response.json();
+      const result = await response.json();
+      setEdTokenInvalid(result.warnings?.includes("invalid_edstem_token") ?? false);
+      return result;
     } catch (err) {
       const message =
         err instanceof TypeError
@@ -86,5 +90,15 @@ export const useBackend = (userId?: string) => {
     setError(null);
   }, []);
 
-  return { executeSync, loading, error, canvasTokenInvalid, clearCanvasTokenError };
+  const clearEdTokenError = useCallback(() => setEdTokenInvalid(false), []);
+
+  return {
+    executeSync,
+    loading,
+    error,
+    canvasTokenInvalid,
+    clearCanvasTokenError,
+    edTokenInvalid,
+    clearEdTokenError,
+  };
 };

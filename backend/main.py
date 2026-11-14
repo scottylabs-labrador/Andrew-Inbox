@@ -3,6 +3,7 @@
 # 1. get user id
 # 2. retrieve canvas token from user id and verify its a valid user_id
 # 3. call scrape piazza, gradescope and canvas with canvas token
+#    (plus optional sources like Ed if the user saved a token for them)
 # 4. upload all of them to supabase
 
 from fastapi import FastAPI, BackgroundTasks, HTTPException, Header
@@ -11,6 +12,8 @@ from canvas import send_canvas_to_supabase
 from courses import InvalidCanvasTokenError
 from piazza.piazza_to_supabase import send_piazza_to_supabase
 from gradescope import send_gradescope_to_supabase
+from edstem.edstem import InvalidEdTokenError
+from edstem.edstem_to_supabase import send_edstem_to_supabase
 from dedupe import remove_cross_platform_duplicates
 from retention import delete_stale_assignments
 import os   
@@ -53,43 +56,53 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def get_entry_by_pk(user_id: any):
+def get_profile_tokens(user_id) -> dict:
+    """The user's saved tokens, e.g. {"canvas_token": "...", "edstem_token": None}."""
     try:
         response = (
             supabase.from_("profiles")
-            .select("canvas_token")    # only select the column we need
+            .select("canvas_token, edstem_token")
             .eq("id", user_id)
             .execute()
         )
-
-        # if response.error:
-        #     print(f"Supabase error: {response.error}")
-        #     return None
-
-        if response.data:
-            # Use .get() in case 'canvas_api_key' doesn't exist
-            return response.data[0].get("canvas_token")
-        else:
-            print("No user found with that user_id")
-            return None
-
+        return response.data[0] if response.data else {}
     except Exception as e:
         print(f"An exception occurred: {e}")
-        return None
+        return {}
 
 
-def sync_supabase(user_id):
-    CANVAS_API_KEY = get_entry_by_pk(user_id)
-    if not CANVAS_API_KEY:
-        print(f"Error: No API key found for {user_id}")
-        return
-    send_canvas_to_supabase(user_id, CANVAS_API_KEY)
+# Optional sources: each runs only if the user saved its token in Settings.
+# To add one: (profile column, scraper(user_id, token), its "bad token" error,
+# warning code the extension shows).
+OPTIONAL_SOURCES = [
+    ("edstem_token", send_edstem_to_supabase, InvalidEdTokenError, "invalid_edstem_token"),
+]
 
-    send_piazza_to_supabase(user_id, CANVAS_API_KEY)
-    send_gradescope_to_supabase(user_id, CANVAS_API_KEY)
+
+def sync_supabase(user_id, tokens):
+    """Returns warnings (codes) about optional sources that didn't work."""
+    canvas_token = tokens["canvas_token"]
+    send_canvas_to_supabase(user_id, canvas_token)
+    send_piazza_to_supabase(user_id, canvas_token)
+    send_gradescope_to_supabase(user_id, canvas_token)
+
+    warnings = []
+    for column, scrape, invalid_token_error, warning in OPTIONAL_SOURCES:
+        token = tokens.get(column)
+        if not token:
+            continue
+        try:
+            scrape(user_id, token)
+        except invalid_token_error:
+            warnings.append(warning)
+        except Exception as e:
+            # An optional source failing shouldn't throw away the rest of the sync
+            print(f"{column} sync failed:", e)
+
     remove_cross_platform_duplicates(user_id)
     delete_stale_assignments(user_id)
     print("FINISHED SYNC")
+    return warnings
 
 
 # Users sign in with Supabase Auth in the extension, which sends its access token
@@ -110,13 +123,15 @@ def get_signed_in_user_id(authorization: str | None) -> str:
 @app.post("/sync")
 def trigger_sync(authorization: str | None = Header(default=None)):
     user_id = get_signed_in_user_id(authorization)
-    if not get_entry_by_pk(user_id):
+    tokens = get_profile_tokens(user_id)
+    if not tokens.get("canvas_token"):
         raise HTTPException(status_code=400, detail="Add your Canvas token first.")
     try:
-        sync_supabase(user_id)
+        warnings = sync_supabase(user_id, tokens)
         return {
             "status": "success",
-            "message": f"Sync completed for {user_id}."
+            "message": f"Sync completed for {user_id}.",
+            "warnings": warnings,
         }
     except InvalidCanvasTokenError:
         # The extension looks for this code to point the user at "Replace token"

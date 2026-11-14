@@ -1,6 +1,9 @@
 import { Box, Button, HStack, Text, VStack } from "@chakra-ui/react";
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import CanvasTokenForm from "./CanvasTokenForm";
+import EdTokenCard from "./EdTokenCard";
+import SettingsCard from "./SettingsCard";
+import type { EdTokenControls } from "./hooks/useAuth";
 import Logo from "./Logo";
 import { AUTO_FETCH_DAYS } from "./hooks/useBackend";
 import { timeAgo } from "@/dates";
@@ -15,18 +18,10 @@ interface Props {
   onFetch: () => void;
   saveCanvasToken: (token: string) => Promise<string | null>;
   onTokenSaved: () => void;
+  ed: EdTokenControls;
+  edTokenInvalid: boolean;
+  onEdTokenChanged: () => void;
   onSignOut: () => void;
-}
-
-function Card({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <Box bg="bg.panel" borderWidth="1px" borderColor="border.muted" borderRadius="12px" p="14px">
-      <Text fontSize="11px" fontWeight="semibold" color="fg.muted" textTransform="uppercase" letterSpacing="0.08em" mb={3}>
-        {title}
-      </Text>
-      {children}
-    </Box>
-  );
 }
 
 export default function SettingsPanel({
@@ -38,6 +33,9 @@ export default function SettingsPanel({
   onFetch,
   saveCanvasToken,
   onTokenSaved,
+  ed,
+  edTokenInvalid,
+  onEdTokenChanged,
   onSignOut,
 }: Props) {
   const [replacing, setReplacing] = useState(false);
@@ -54,7 +52,7 @@ export default function SettingsPanel({
         </Text>
       </VStack>
 
-      <Card title="Account">
+      <SettingsCard title="Account">
         <HStack gap={3}>
           <Box
             boxSize="38px"
@@ -92,9 +90,9 @@ export default function SettingsPanel({
             Sign out
           </Button>
         </HStack>
-      </Card>
+      </SettingsCard>
 
-      <Card title="Canvas">
+      <SettingsCard title="Canvas">
         <HStack justify="space-between" mb={showForm ? 3 : 0}>
           <HStack
             gap={1.5}
@@ -141,9 +139,11 @@ export default function SettingsPanel({
             }}
           />
         )}
-      </Card>
+      </SettingsCard>
 
-      <Card title="Updates">
+      <EdTokenCard ed={ed} invalid={edTokenInvalid} onChanged={onEdTokenChanged} />
+
+      <SettingsCard title="Updates">
         <HStack justify="space-between" gap={3}>
           <Text fontSize="15px" fontWeight="semibold">
             Last fetched {lastFetch ? timeAgo(lastFetch) : "never"}
@@ -173,7 +173,7 @@ export default function SettingsPanel({
           Andrew Inbox fetches new assignments every {AUTO_FETCH_DAYS} days when you open it. The backend needs to be
           running.
         </Text>
-      </Card>
+      </SettingsCard>
 
       <Text fontSize="12px" color="fg.subtle" textAlign="center" pt={1}>
         Light and dark mode follow your system setting.

@@ -14,12 +14,14 @@ import { getLastFetch, isFetchDue, useBackend } from "./hooks/useBackend";
 import { CourseListContext } from "@/courseColors";
 import { ANNOUNCEMENT_DAYS, isPostedInWindow } from "@/dates";
 import type { Creds } from "@/App";
+import type { EdTokenControls } from "./hooks/useAuth";
 
 type Tab = "todo" | "announcements";
 
 interface Props {
   c: Creds;
   saveCanvasToken: (token: string) => Promise<string | null>;
+  ed: EdTokenControls;
   onSignOut: () => void;
 }
 
@@ -71,7 +73,7 @@ function TabButton({
   );
 }
 
-export default function MainView({ c, saveCanvasToken, onSignOut }: Props) {
+export default function MainView({ c, saveCanvasToken, ed, onSignOut }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("todo");
   const [showSettings, setShowSettings] = useState(false);
   // Kept when switching tabs
@@ -81,7 +83,15 @@ export default function MainView({ c, saveCanvasToken, onSignOut }: Props) {
   const [refreshKey, setRefreshKey] = useState(0);
   const courses = useCourses(c.userId, refreshKey);
   const announcements = useAnnounce(refreshKey);
-  const { executeSync, loading, error, canvasTokenInvalid, clearCanvasTokenError } = useBackend(c.userId);
+  const {
+    executeSync,
+    loading,
+    error,
+    canvasTokenInvalid,
+    clearCanvasTokenError,
+    edTokenInvalid,
+    clearEdTokenError,
+  } = useBackend(c.userId);
 
   const runFetch = async () => {
     if (await executeSync()) setRefreshKey((k) => k + 1);
@@ -255,6 +265,9 @@ export default function MainView({ c, saveCanvasToken, onSignOut }: Props) {
               onFetch={runFetch}
               saveCanvasToken={saveCanvasToken}
               onTokenSaved={clearCanvasTokenError}
+              ed={ed}
+              edTokenInvalid={edTokenInvalid}
+              onEdTokenChanged={clearEdTokenError}
               onSignOut={onSignOut}
             />
           ) : activeTab === "todo" ? (
