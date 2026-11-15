@@ -1,6 +1,7 @@
 import { supabase } from "@/supabaseClient";
 import { useState, useEffect } from "react";
 import { KEEP_DONE_DAYS, addDays } from "@/dates";
+import { readJson, storageKey, writeJson } from "@/storage";
 
 export interface Task {
   id: string;
@@ -57,35 +58,50 @@ const loadTasks = async (userId: string): Promise<Task[] | null> => {
     platform: row.platform,
     userId: row.user_id,
   }));
-  // Finished work more than a month old is dropped from the list and the
-  // database (the backend skips re-saving it on the next fetch).
+  // Finished work more than a month old is hidden, but stays in the database:
+  // its row is what remembers you ticked it off. Deleting it made the next
+  // fetch re-add it from Canvas as not done, back in Overdue. The backend
+  // removes old rows once they're past the semester window (retention.py).
   const cutoff = addDays(new Date(), -KEEP_DONE_DAYS);
-  const stale = hydratedData.filter((t) => t.status && t.due < cutoff);
-  if (stale.length) {
-    supabase
-      .from("assignments_duplicate")
-      .delete()
-      .in(
-        "assignment_id",
-        stale.map((t) => t.id),
-      )
-      .then(({ error: deleteError }) => {
-        if (deleteError) console.error("Cleanup error:", deleteError);
-      });
-  }
-  return hydratedData.filter((t) => !stale.includes(t));
+  return hydratedData.filter((t) => !(t.status && t.due < cutoff));
+};
+
+// The last list loaded from Supabase, shown instantly on the next popup open
+// while the fresh copy loads
+const cacheKey = (userId: string) => storageKey(userId, "tasks-cache");
+type CachedTask = Omit<Task, "due"> & { due: string };
+
+const readCachedTasks = (userId?: string): Task[] | null => {
+  if (!userId) return null;
+  const saved = readJson<CachedTask[]>(cacheKey(userId));
+  return saved ? saved.map((t) => ({ ...t, due: new Date(t.due) })) : null;
 };
 
 // Pass the signed-in user's id to the hook
 export const useTasks = (currentUsername?: string, refreshKey = 0) => {
-  const [todos, setTodos] = useState<Task[]>([]);
+  const [todos, setTodos] = useState<Task[]>(
+    () => readCachedTasks(currentUsername) ?? [],
+  );
+  // Which user `todos` belongs to (cached or fetched); null until there's any
+  const [shownUser, setShownUser] = useState<string | null>(() =>
+    readCachedTasks(currentUsername) ? (currentUsername ?? null) : null,
+  );
 
-  // Loading until the fetch for this user + refresh has come back. Deriving it
-  // (instead of setLoading(true) in the effect) shows the spinner on the very
-  // first render after a login or sync.
+  // Spinner only when there's nothing to show yet for this user. With a saved
+  // copy, the list draws right away and quietly updates when the fetch is back.
   const fetchKey = `${currentUsername ?? ""}|${refreshKey}`;
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
-  const loading = Boolean(currentUsername) && loadedKey !== fetchKey;
+  const loading =
+    Boolean(currentUsername) &&
+    loadedKey !== fetchKey &&
+    shownUser !== currentUsername;
+
+  // Keep the saved copy in step with every change (fetches, check-offs, edits)
+  useEffect(() => {
+    if (currentUsername && shownUser === currentUsername) {
+      writeJson(cacheKey(currentUsername), todos);
+    }
+  }, [todos, currentUsername, shownUser]);
 
   // Re-fetch whenever the user logs in or changes, or after a sync
   useEffect(() => {
@@ -94,7 +110,10 @@ export const useTasks = (currentUsername?: string, refreshKey = 0) => {
     loadTasks(currentUsername).then((tasks) => {
       // A newer fetch (other user / later sync) has started; drop this one
       if (cancelled) return;
-      if (tasks) setTodos(tasks);
+      if (tasks) {
+        setTodos(tasks);
+        setShownUser(currentUsername);
+      }
       setLoadedKey(fetchKey);
     });
     return () => {

@@ -1,11 +1,15 @@
 import { supabase } from "@/supabaseClient";
 import { ANNOUNCEMENT_DAYS, addDays, getSemesterRange, startOfDay } from "@/dates";
 import { useEffect, useState } from "react";
+import { readJson, storageKey, writeJson } from "@/storage";
 
 // This semester's classes (ones with assignments this semester or
 // announcements this week), for the class filter and class colors
 export const useCourses = (userId?: string, refreshKey = 0) => {
-  const [courses, setCourses] = useState<string[]>([]);
+  // Last list seen, so the class filter and colors are right on the first draw
+  const [courses, setCourses] = useState<string[]>(
+    () => (userId && readJson<string[]>(storageKey(userId, "courses-cache"))) || [],
+  );
 
   useEffect(() => {
     if (!userId) return;
@@ -32,7 +36,11 @@ export const useCourses = (userId?: string, refreshKey = 0) => {
       const names = new Set<string>();
       assignments.data?.forEach((r) => r.course_name && names.add(r.course_name));
       announcements.data?.forEach((r) => r.course && names.add(r.course));
-      setCourses([...names].sort());
+      // Keep the saved list if Supabase couldn't be reached
+      if (assignments.error || announcements.error) return;
+      const list = [...names].sort();
+      setCourses(list);
+      writeJson(storageKey(userId, "courses-cache"), list);
     });
 
     return () => {

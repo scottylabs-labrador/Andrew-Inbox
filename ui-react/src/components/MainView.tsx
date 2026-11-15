@@ -10,8 +10,9 @@ import Logo from "./Logo";
 import SettingsPanel from "./SettingsPanel";
 import { useCourses } from "./hooks/useCourses";
 import { useAnnounce } from "./hooks/useAnnounce";
-import { getLastFetch, isFetchDue, useBackend } from "./hooks/useBackend";
+import { getLastFetch, isFetchDue, isFetchPending, useBackend } from "./hooks/useBackend";
 import { CourseListContext } from "@/courseColors";
+import { storageKey, usePersistentState } from "@/storage";
 import { ANNOUNCEMENT_DAYS, isPostedInWindow } from "@/dates";
 import type { Creds } from "@/App";
 import type { EdTokenControls } from "./hooks/useAuth";
@@ -74,15 +75,28 @@ function TabButton({
 }
 
 export default function MainView({ c, saveCanvasToken, ed, onSignOut }: Props) {
-  const [activeTab, setActiveTab] = useState<Tab>("todo");
-  const [showSettings, setShowSettings] = useState(false);
-  // Kept when switching tabs
-  const [timeFilter, setTimeFilter] = useState("All");
-  const [courseFilter, setCourseFilter] = useState<string | null>(null);
+  // Remembered across popup opens, so closing the popup doesn't send you back
+  // to the start
+  const [activeTab, setActiveTab] = usePersistentState<Tab>(
+    storageKey(c.userId, "tab"),
+    "todo",
+  );
+  const [showSettings, setShowSettings] = usePersistentState(
+    storageKey(c.userId, "settings-open"),
+    false,
+  );
+  const [timeFilter, setTimeFilter] = usePersistentState(
+    storageKey(c.userId, "time-filter"),
+    "All",
+  );
+  const [courseFilter, setCourseFilter] = usePersistentState<string | null>(
+    storageKey(c.userId, "course-filter"),
+    null,
+  );
   // Bumped after each successful fetch so pages re-load from Supabase
   const [refreshKey, setRefreshKey] = useState(0);
   const courses = useCourses(c.userId, refreshKey);
-  const announcements = useAnnounce(refreshKey);
+  const announcements = useAnnounce(c.userId, refreshKey);
   const {
     executeSync,
     loading,
@@ -97,12 +111,15 @@ export default function MainView({ c, saveCanvasToken, ed, onSignOut }: Props) {
     if (await executeSync()) setRefreshKey((k) => k + 1);
   };
 
-  // Fetch by itself when the popup opens if it's been over a week
+  // Fetch by itself when the popup opens if the last fetch is over an hour old
+  // If a fetch was still running when the popup closed, show "Fetching…"
+  // again and wait for it to finish instead of looking idle.
   useEffect(() => {
-    if (!isFetchDue(c.userId)) return;
+    const join = isFetchPending(c.userId);
+    if (!join && !isFetchDue(c.userId)) return;
     // Let the popup draw first; the fetch takes a minute or two
     const timer = setTimeout(async () => {
-      if (await executeSync()) setRefreshKey((k) => k + 1);
+      if (await executeSync({ join })) setRefreshKey((k) => k + 1);
     }, 0);
     return () => clearTimeout(timer);
   }, [c.userId, executeSync]);

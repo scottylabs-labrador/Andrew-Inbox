@@ -1,5 +1,6 @@
 import { supabase } from "@/supabaseClient";
 import { useState, useEffect } from "react";
+import { readJson, storageKey, writeJson } from "@/storage";
 
 // Shown with each opened announcement, since the descriptions are LLM summaries
 export const AI_NOTE =
@@ -35,17 +36,26 @@ const loadAnnouncements = async (): Promise<Announce[] | null> => {
   return data || [];
 };
 
-export const useAnnounce = (refreshKey = 0) => {
-  const [ann, setAnn] = useState<Announce[]>([]);
+export const useAnnounce = (userId: string, refreshKey = 0) => {
+  // Shown instantly from the last popup open, then replaced by the fresh copy
+  const cacheKey = storageKey(userId, "announcements-cache");
+  const [ann, setAnnState] = useState<Announce[] | null>(() =>
+    readJson<Announce[]>(cacheKey),
+  );
+  const setAnn = (update: (prev: Announce[]) => Announce[]) =>
+    setAnnState((prev) => {
+      const next = update(prev ?? []);
+      writeJson(cacheKey, next);
+      return next;
+    });
 
-  // Loading until the fetch for this refresh has come back (derived, so the
-  // spinner shows on the very first render after a sync)
+  // Spinner only until there's something to show (saved or fetched)
   const [loadedKey, setLoadedKey] = useState<number | null>(null);
-  const loading = loadedKey !== refreshKey;
+  const loading = loadedKey !== refreshKey && ann === null;
 
   const fetchAnnouncements = async () => {
     const result = await loadAnnouncements();
-    if (result) setAnn(result);
+    if (result) setAnn(() => result);
   };
 
   useEffect(() => {
@@ -53,13 +63,16 @@ export const useAnnounce = (refreshKey = 0) => {
     loadAnnouncements().then((result) => {
       // A later sync has started a newer fetch; drop this one
       if (cancelled) return;
-      if (result) setAnn(result);
+      if (result) {
+        setAnnState(result);
+        writeJson(cacheKey, result);
+      }
       setLoadedKey(refreshKey);
     });
     return () => {
       cancelled = true;
     };
-  }, [refreshKey]);
+  }, [refreshKey, cacheKey]);
 
   const toggleAnnounce = async (id: string, currentStatus: boolean) => {
     setAnn((prev) =>
@@ -80,7 +93,7 @@ export const useAnnounce = (refreshKey = 0) => {
   };
 
   return {
-    ann,
+    ann: ann ?? [],
     loading,
     toggleAnnounce,
   };

@@ -1,6 +1,7 @@
 import { supabase } from "@/supabaseClient";
 import type { Session } from "@supabase/supabase-js";
 import { useCallback, useEffect, useState } from "react";
+import { clearUserStorage, readJson, removeKey, storageKey, writeJson } from "@/storage";
 
 export interface Profile {
   userId: string;
@@ -33,25 +34,61 @@ const friendlyAuthError = (message: string) => {
   return message;
 };
 
+// Who was signed in last time and their profile, so the popup can open straight
+// into the inbox instead of waiting on Supabase (it re-checks right after).
+const LAST_USER_KEY = "andrew-inbox-last-user";
+const profileKey = (userId: string) => storageKey(userId, "profile");
+
+const cachedProfile = (): Profile | null => {
+  const userId = readJson<string>(LAST_USER_KEY);
+  return userId ? readJson<Profile>(profileKey(userId)) : null;
+};
+
 export const useAuth = () => {
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [profile, setProfileState] = useState<Profile | null>(cachedProfile);
+  const [loading, setLoading] = useState(() => !profile);
   const [recovering, setRecovering] = useState(false);
+
+  const setProfile = useCallback(
+    (update: Profile | null | ((p: Profile | null) => Profile | null)) => {
+      setProfileState((prev) => {
+        const next = typeof update === "function" ? update(prev) : update;
+        if (next) {
+          writeJson(LAST_USER_KEY, next.userId);
+          writeJson(profileKey(next.userId), next);
+        }
+        return next;
+      });
+    },
+    [],
+  );
 
   const loadProfile = useCallback(async (s: Session | null) => {
     if (!s) {
-      setProfile(null);
+      removeKey(LAST_USER_KEY);
+      setProfileState(null);
       setLoading(false);
       return;
     }
+    // Someone else signed in: don't keep showing the last person's inbox
+    setProfileState((p) => (p && p.userId !== s.user.id ? null : p));
     const { data, error } = await supabase
       .from("profiles")
       .select("username, has_canvas_token, has_edstem_token")
       .eq("id", s.user.id)
       .maybeSingle();
 
-    if (error) console.error("Profile error:", error);
+    if (error) {
+      console.error("Profile error:", error);
+      // Keep the saved copy rather than guessing (e.g. "no Canvas token")
+      const saved = readJson<Profile>(profileKey(s.user.id));
+      if (saved) {
+        setProfileState(saved);
+        setLoading(false);
+        return;
+      }
+    }
     setProfile({
       userId: s.user.id,
       username: data?.username ?? s.user.email?.split("@")[0] ?? "",
@@ -59,7 +96,7 @@ export const useAuth = () => {
       hasEdToken: data?.has_edstem_token ?? false,
     });
     setLoading(false);
-  }, []);
+  }, [setProfile]);
 
   useEffect(() => {
     // Fires once on startup with the saved session (INITIAL_SESSION), then on
@@ -138,7 +175,10 @@ export const useAuth = () => {
   };
 
   const signOut = async () => {
+    const userId = session?.user.id ?? profile?.userId;
     await supabase.auth.signOut();
+    if (userId) clearUserStorage(userId);
+    removeKey(LAST_USER_KEY);
   };
 
   const saveCanvasToken = async (token: string) => {
