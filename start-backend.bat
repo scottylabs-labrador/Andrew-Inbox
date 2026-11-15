@@ -26,7 +26,11 @@ if not defined PY (
 cd backend
 set "VENV_PY=.venv\Scripts\python.exe"
 
-if not exist "%VENV_PY%" (
+rem Recreate the environment if it's missing or damaged. A venv that has lost its
+rem pyvenv.cfg (e.g. a cloud-sync tool like OneDrive renamed or dropped it) still
+rem runs, but as the system Python, so pip would install into the global Python.
+"%VENV_PY%" -c "import sys; sys.exit(sys.prefix == sys.base_prefix)" >nul 2>&1
+if errorlevel 1 (
   echo Creating the Python environment ^(first run only^)...
   %PY% -m venv --clear .venv || goto :fail
   del /q ".venv\.installed-requirements.txt" >nul 2>&1

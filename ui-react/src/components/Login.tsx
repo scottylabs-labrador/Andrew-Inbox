@@ -1,9 +1,14 @@
 import { Box, Text, VStack, HStack, Input, Button } from "@chakra-ui/react";
 import { useState } from "react";
+import { removeKey, usePersistentState } from "@/storage";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import ForgotPassword from "./ForgotPassword";
+import ForgotPassword, { RESET_STEP_KEY } from "./ForgotPassword";
+
+// Which screen (sign in / new account / forgot password) survives closing the
+// popup, e.g. to go and check your email for a reset code
+const LOGIN_MODE_KEY = "andrew-inbox-login-mode";
 
 const loginSchema = z.object({
   andrewId: z
@@ -37,7 +42,10 @@ export default function LoginPage({
   sendPasswordResetCode,
   resetPassword,
 }: LoginPageProps) {
-  const [mode, setMode] = useState<"signIn" | "signUp" | "forgot">("signIn");
+  const [mode, setMode] = usePersistentState<"signIn" | "signUp" | "forgot">(
+    LOGIN_MODE_KEY,
+    "signIn",
+  );
   const [authError, setAuthError] = useState<string | null>(null);
 
   const {
@@ -51,7 +59,10 @@ export default function LoginPage({
   const onSubmit = async (data: LoginFormData) => {
     setAuthError(null);
     const action = mode === "signIn" ? signIn : signUp;
-    setAuthError(await action(data.andrewId, data.password));
+    const error = await action(data.andrewId, data.password);
+    setAuthError(error);
+    // Signed in: next time (after signing out) start from the sign-in tab
+    if (!error) removeKey(LOGIN_MODE_KEY);
   };
 
   const switchMode = (next: "signIn" | "signUp") => {
@@ -131,8 +142,18 @@ export default function LoginPage({
       {mode === "forgot" ? (
         <ForgotPassword
           sendPasswordResetCode={sendPasswordResetCode}
-          resetPassword={resetPassword}
-          onBack={() => setMode("signIn")}
+          resetPassword={async (andrewId, code, newPassword) => {
+            const error = await resetPassword(andrewId, code, newPassword);
+            if (!error) {
+              removeKey(LOGIN_MODE_KEY);
+              removeKey(RESET_STEP_KEY);
+            }
+            return error;
+          }}
+          onBack={() => {
+            removeKey(RESET_STEP_KEY);
+            setMode("signIn");
+          }}
         />
       ) : (
         <form style={{ width: "100%" }} onSubmit={handleSubmit(onSubmit)}>

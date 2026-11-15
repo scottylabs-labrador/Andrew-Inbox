@@ -3,6 +3,31 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { readJson, removeKey, writeJson } from "@/storage";
+
+// After the code is emailed, remember who it went to so closing the popup to
+// check your email comes back to the "enter the code" step. Only the Andrew ID
+// and time are saved, never the code or passwords. Supabase reset codes last
+// an hour, so the step is dropped after that.
+export const RESET_STEP_KEY = "andrew-inbox-reset-step";
+const CODE_LIFETIME_MS = 60 * 60 * 1000;
+
+interface ResetStep {
+  andrewId: string;
+  sentAt: number;
+}
+
+const savedResetStep = () => {
+  const saved = readJson<ResetStep>(RESET_STEP_KEY);
+  if (saved && Date.now() - saved.sentAt < CODE_LIFETIME_MS) return saved.andrewId;
+  removeKey(RESET_STEP_KEY);
+  return null;
+};
+
+const saveResetStep = (andrewId: string | null) => {
+  if (andrewId) writeJson(RESET_STEP_KEY, { andrewId, sentAt: Date.now() });
+  else removeKey(RESET_STEP_KEY);
+};
 
 const andrewIdField = z
   .string()
@@ -63,7 +88,11 @@ export default function ForgotPassword({
   onBack,
 }: Props) {
   // Set once the code has been emailed; switches the form to step 2.
-  const [andrewId, setAndrewId] = useState<string | null>(null);
+  const [andrewId, setAndrewIdState] = useState<string | null>(savedResetStep);
+  const setAndrewId = (id: string | null) => {
+    setAndrewIdState(id);
+    saveResetStep(id);
+  };
   const [message, setMessage] = useState<string | null>(null);
 
   const requestForm = useForm<RequestData>({
@@ -148,6 +177,17 @@ export default function ForgotPassword({
               Check {andrewId}@andrew.cmu.edu for a code (it can take a minute
               and may land in spam).
             </Text>
+            {/* Not shown. Password managers look for the username next to a new
+                password; without this one, Chrome treats the Code box as the
+                username and fills the Andrew ID into it. */}
+            <input
+              type="text"
+              name="username"
+              autoComplete="username"
+              value={andrewId}
+              readOnly
+              hidden
+            />
             <Box>
               <Text {...labelProps}>Code</Text>
               <Input

@@ -16,6 +16,7 @@ import TaskForm, { type TaskFormData } from "./TaskForm";
 import { useState, type ReactNode } from "react";
 import type { Creds } from "@/App";
 import { getSemesterRange, isDueInWindow, isOverdue, startOfDay } from "@/dates";
+import { removeKey, storageKey, usePersistentState } from "@/storage";
 
 interface Props {
   filter: string;
@@ -131,8 +132,29 @@ export default function TasksPage({
     updateAssignment,
     deleteAssignment,
   } = useTasks(c?.userId, refreshKey);
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [editing, setEditing] = useState<Task | null>(null);
+  // Which dialog is open and what's typed in it survive closing the popup;
+  // closing the dialog itself (Cancel, X, Esc, Add/Save) throws the draft away
+  const userId = c?.userId ?? "";
+  const addDraftKey = storageKey(userId, "add-draft");
+  const editDraftKey = (taskId: string) => storageKey(userId, `edit-draft-${taskId}`);
+  const [isAddOpen, setAddOpen] = usePersistentState(
+    storageKey(userId, "add-open"),
+    false,
+  );
+  const [editingId, setEditingId] = usePersistentState<string | null>(
+    storageKey(userId, "editing"),
+    null,
+  );
+  const setIsAddOpen = (open: boolean) => {
+    setAddOpen(open);
+    if (!open) removeKey(addDraftKey);
+  };
+  const setEditing = (task: Task | null) => {
+    if (!task && editingId) removeKey(editDraftKey(editingId));
+    setEditingId(task?.id ?? null);
+  };
+  // The task may have been deleted or synced away since the popup was closed
+  const editing = todos.find((t) => t.id === editingId) ?? null;
   const [isOverdueOpen, setIsOverdueOpen] = useState(true);
   const [isDoneOpen, setIsDoneOpen] = useState(false);
 
@@ -285,6 +307,7 @@ export default function TasksPage({
         setIsAddOpen,
         <TaskForm
           courses={courses}
+          draftKey={addDraftKey}
           onSubmit={(data) => {
             setIsAddOpen(false);
             if (c) addAssignment(data, c.userId);
@@ -299,6 +322,7 @@ export default function TasksPage({
           <TaskForm
             key={editing.id}
             courses={courses}
+            draftKey={editDraftKey(editing.id)}
             initial={{
               assignment: editing.assignment,
               course: editing.course,

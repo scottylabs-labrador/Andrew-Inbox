@@ -165,7 +165,7 @@ Next it asks for a **Canvas access token**. This lets Andrew Inbox read your cla
 5. Click **Generate Token**. Copy the long code it shows. It starts with numbers and a `~`, like `7752~AbCd…`. **Canvas only shows it once**, so copy it now.
 6. Go back to the popup, paste it, and click **Save and continue**.
 
-Andrew Inbox then fetches your assignments and announcements by itself. The first fetch takes a minute or two. After that it updates every 7 days when you open it, or click **Fetch** to update sooner.
+Andrew Inbox then fetches your assignments and announcements by itself. The first fetch takes a minute or two. After that it updates by itself when you open it (at most once an hour), or click **Fetch** to update right away.
 
 **When your token expires** (for example at the start of next semester), make a new one the same way and paste it in the popup's **Settings**.
 
@@ -240,7 +240,7 @@ This updates the `andrew-inbox-extension/` folder (and also makes `andrew-inbox-
 - **First time only:** go to `chrome://extensions`, turn on **Developer mode**, click **Load unpacked**, and pick the `andrew-inbox-extension` folder.
 - **Every time after:** just click **↻** on the Andrew Inbox card. You don't need to delete or re-add anything.
 
-**3. Start the backend** (needed only for **Fetch**, which also runs by itself every 7 days):
+**3. Start the backend** (needed only for **Fetch**, which also runs by itself when you open the extension, at most once an hour):
 
 - **Windows:** double-click `start-backend.bat`
 - **macOS / Linux:** `./start-backend.sh`

@@ -1,6 +1,6 @@
 beautifulsoup4
 fastapi
-gradescopeapi
+python-dateutil
 openai
 pydantic
 python-dotenv

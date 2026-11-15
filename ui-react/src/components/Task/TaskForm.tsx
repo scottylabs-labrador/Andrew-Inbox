@@ -13,6 +13,8 @@ import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LuX } from "react-icons/lu";
+import { useEffect } from "react";
+import { readJson, removeKey, writeJson } from "@/storage";
 
 const schema = z.object({
   assignment: z.string().trim().min(1, { message: "Give it a name." }),
@@ -28,6 +30,9 @@ interface Props {
   initial?: TaskFormData;
   onDelete?: () => void;
   courses: string[];
+  // Where unsaved typing is kept, so closing the popup mid-way doesn't lose it.
+  // The parent removes it when the dialog is closed on purpose.
+  draftKey?: string;
 }
 
 const MONTHS = [
@@ -135,7 +140,9 @@ function DateSelect({
   );
 }
 
-export default function TaskForm({ onSubmit, initial, onDelete, courses }: Props) {
+const blank = (): TaskFormData => ({ assignment: "", course: "", due: toDay(new Date()) });
+
+export default function TaskForm({ onSubmit, initial, onDelete, courses, draftKey }: Props) {
   const {
     register,
     handleSubmit,
@@ -145,14 +152,28 @@ export default function TaskForm({ onSubmit, initial, onDelete, courses }: Props
     formState: { errors },
   } = useForm<TaskFormData>({
     resolver: zodResolver(schema),
-    defaultValues: initial ?? { assignment: "", course: "", due: toDay(new Date()) },
+    defaultValues: (draftKey && readJson<TaskFormData>(draftKey)) || initial || blank(),
   });
 
-  const due = useWatch({ control, name: "due" });
+  const values = useWatch({ control });
+  const due = values.due ?? "";
+
+  // Save what's typed as it changes; nothing is kept while it still matches
+  // what the form started with
+  useEffect(() => {
+    if (!draftKey) return;
+    const start = initial ?? blank();
+    const changed = (Object.keys(start) as (keyof TaskFormData)[]).some(
+      (k) => (values[k] ?? "") !== start[k],
+    );
+    if (changed) writeJson(draftKey, values);
+    else removeKey(draftKey);
+  }, [draftKey, initial, values]);
 
   const onInternalSubmit = (data: TaskFormData) => {
+    if (!initial) reset(blank());
+    if (draftKey) removeKey(draftKey);
     onSubmit(data);
-    if (!initial) reset({ assignment: "", course: "", due: toDay(new Date()) });
   };
 
   return (

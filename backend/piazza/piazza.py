@@ -161,7 +161,9 @@ def get_recent_post_ids(rpc, nid, cutoff):
     return post_ids
 
 
-def get_all_posts(CANVAS_API_KEY):
+def get_all_posts(CANVAS_API_KEY, known_urls=frozenset()):
+    """known_urls: posts already saved. They're skipped, so a fetch doesn't
+    download and pay to summarize the same posts again every time."""
     launch_url = find_piazza_launch_url(CANVAS_API_KEY)
     if not launch_url:
         print("No Piazza course found")
@@ -194,6 +196,8 @@ def get_all_posts(CANVAS_API_KEY):
             print(f"{course_name}: {len(post_ids)} posts this week")
 
             for post_id in post_ids:
+                if f"https://piazza.com/class/{nid}/post/{post_id}" in known_urls:
+                    continue
                 try:
                     post = piazza_call(rpc.content_get, post_id, nid=nid)
                 except RequestError as e:

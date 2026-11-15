@@ -26,8 +26,12 @@ fi
 cd backend
 VENV_PY=".venv/bin/python"
 
-# Recreate the environment if it's missing or was made on another computer.
-if ! "$VENV_PY" -c "" >/dev/null 2>&1; then
+# Recreate the environment if it's missing, was made on another computer, or
+# is damaged. A venv that has lost its pyvenv.cfg (e.g. a cloud-sync tool like
+# iCloud renamed or dropped it) still runs, but as the system Python, so pip
+# would install into the global Python. Only accept it if it really is a venv
+# (sys.prefix differs from sys.base_prefix).
+if ! "$VENV_PY" -c "import sys; sys.exit(sys.prefix == sys.base_prefix)" >/dev/null 2>&1; then
   echo "Creating the Python environment (first run only)..."
   "$PY" -m venv --clear .venv
   rm -f .venv/.installed-requirements.txt

@@ -5,7 +5,7 @@ import EdTokenCard from "./EdTokenCard";
 import SettingsCard from "./SettingsCard";
 import type { EdTokenControls } from "./hooks/useAuth";
 import Logo from "./Logo";
-import { AUTO_FETCH_DAYS } from "./hooks/useBackend";
+import { AUTO_FETCH_HOURS } from "./hooks/useBackend";
 import { timeAgo } from "@/dates";
 import manifest from "../../public/manifest.json";
 
@@ -170,7 +170,7 @@ export default function SettingsPanel({
           </Text>
         )}
         <Text fontSize="13px" lineHeight="1.5" color="fg.muted" mt="10px">
-          Andrew Inbox fetches new assignments every {AUTO_FETCH_DAYS} days when you open it. The backend needs to be
+          Andrew Inbox fetches new assignments when you open it, at most once {AUTO_FETCH_HOURS === 1 ? "an hour" : `every ${AUTO_FETCH_HOURS} hours`}. The backend needs to be
           running.
         </Text>
       </SettingsCard>

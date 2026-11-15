@@ -14,7 +14,7 @@ from piazza.piazza_to_supabase import send_piazza_to_supabase
 from gradescope import send_gradescope_to_supabase
 from edstem.edstem import InvalidEdTokenError
 from edstem.edstem_to_supabase import send_edstem_to_supabase
-from dedupe import remove_cross_platform_duplicates
+from dedupe import load_gradescope_index, remove_cross_platform_duplicates
 from retention import delete_stale_assignments
 import os   
 from dotenv import load_dotenv
@@ -80,11 +80,29 @@ OPTIONAL_SOURCES = [
 
 
 def sync_supabase(user_id, tokens):
-    """Returns warnings (codes) about optional sources that didn't work."""
+    """Returns warnings (codes) about optional sources that didn't work.
+
+    Gradescope goes before Canvas so Canvas can skip its copies of Gradescope
+    assignments. Saving them and deleting them afterwards left duplicates and
+    not-done copies in the database for most of the fetch, which the popup
+    showed if it was opened then."""
     canvas_token = tokens["canvas_token"]
-    send_canvas_to_supabase(user_id, canvas_token)
+    try:
+        old_gradescope_done = send_gradescope_to_supabase(user_id, canvas_token)
+    except InvalidCanvasTokenError:
+        raise
+    except Exception as e:
+        # Canvas and the rest still update; Canvas copies are checked against
+        # the Gradescope assignments saved by earlier fetches
+        print("[!] Gradescope sync failed:", e)
+        old_gradescope_done = []
+
+    # Clear Canvas copies saved by older versions or earlier fetches, then make
+    # sure Canvas doesn't save them again
+    remove_cross_platform_duplicates(user_id, old_gradescope_done)
+    gradescope = load_gradescope_index(user_id, old_gradescope_done)
+    send_canvas_to_supabase(user_id, canvas_token, gradescope)
     send_piazza_to_supabase(user_id, canvas_token)
-    send_gradescope_to_supabase(user_id, canvas_token)
 
     warnings = []
     for column, scrape, invalid_token_error, warning in OPTIONAL_SOURCES:
@@ -99,10 +117,48 @@ def sync_supabase(user_id, tokens):
             # An optional source failing shouldn't throw away the rest of the sync
             print(f"{column} sync failed:", e)
 
-    remove_cross_platform_duplicates(user_id)
+    remove_cross_platform_duplicates(user_id, old_gradescope_done)
     delete_stale_assignments(user_id)
     print("FINISHED SYNC")
     return warnings
+
+
+# The extension fetches by itself when it opens, so a second request can arrive
+# while a sync for the same user is still running (e.g. the popup was closed and
+# reopened). Instead of scraping everything twice at once, the second request
+# waits for the running sync and gets its result.
+_running_syncs = {}
+_running_syncs_lock = threading.Lock()
+
+
+def sync_once(user_id, tokens, join_only=False):
+    """join_only: wait for a running sync but never start one (returns None
+    if nothing is running). The popup uses this when it reopens mid-fetch."""
+    with _running_syncs_lock:
+        job = _running_syncs.get(user_id)
+        if job is None and join_only:
+            return None
+        starts_sync = job is None
+        if starts_sync:
+            job = {"done": threading.Event(), "result": None, "error": None}
+            _running_syncs[user_id] = job
+
+    if starts_sync:
+        try:
+            job["result"] = sync_supabase(user_id, tokens)
+        except Exception as e:
+            job["error"] = e
+        finally:
+            with _running_syncs_lock:
+                _running_syncs.pop(user_id, None)
+            job["done"].set()
+    else:
+        print("Sync already running for this user; waiting for it")
+        job["done"].wait()
+
+    if job["error"]:
+        raise job["error"]
+    return job["result"]
 
 
 # Users sign in with Supabase Auth in the extension, which sends its access token
@@ -121,13 +177,15 @@ def get_signed_in_user_id(authorization: str | None) -> str:
 
 
 @app.post("/sync")
-def trigger_sync(authorization: str | None = Header(default=None)):
+def trigger_sync(join: bool = False, authorization: str | None = Header(default=None)):
     user_id = get_signed_in_user_id(authorization)
     tokens = get_profile_tokens(user_id)
     if not tokens.get("canvas_token"):
         raise HTTPException(status_code=400, detail="Add your Canvas token first.")
     try:
-        warnings = sync_supabase(user_id, tokens)
+        warnings = sync_once(user_id, tokens, join_only=join)
+        if warnings is None:
+            return {"status": "idle", "message": "No fetch is running.", "warnings": []}
         return {
             "status": "success",
             "message": f"Sync completed for {user_id}.",

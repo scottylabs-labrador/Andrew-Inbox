@@ -12,9 +12,12 @@ from supabase import create_client, Client
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from config import supabase
 from courses import course_label, get_active_courses
-from retention import worth_saving
+from retention import save_assignments, worth_saving
 
-def send_canvas_to_supabase(user_id, CANVAS_TOKEN):
+def send_canvas_to_supabase(user_id, CANVAS_TOKEN, gradescope=None):
+   """gradescope: a dedupe.GradescopeIndex. Canvas copies of Gradescope
+   assignments aren't saved at all; Canvas never sees Gradescope submissions,
+   so they'd show as not done (and briefly as duplicates mid-fetch)."""
    
 
 
@@ -96,6 +99,7 @@ def send_canvas_to_supabase(user_id, CANVAS_TOKEN):
            due_date = format_date(a["due_at"])
 
            # Prepare record for Supabase
+           submitted = handed_in(a)
            records.append({
                "user_id": user_id,
                "course_name": course_name,
@@ -104,17 +108,19 @@ def send_canvas_to_supabase(user_id, CANVAS_TOKEN):
                "due_date": due_date,
                "points_possible": a.get("points_possible"),
                "retrieved_at": datetime.utcnow().isoformat(),
-               "status": handed_in(a) or f"{user_id} canvas {a["id"]}" in done_ids,
+               # Only used to decide what's worth saving; see save_assignments
+               "status": submitted or f"{user_id} canvas {a["id"]}" in done_ids,
+               "handed_in": submitted,
                "platform": "Canvas"
            })
 
        # Skip finished work over a month old and anything from long ago
        records = [r for r in records if worth_saving(r["due_date"], r["status"])]
+       if gradescope:
+           records = [r for r in records if not gradescope.match(r)]
 
-       # One request per course instead of one per assignment
-       if records:
-           try:
-               supabase.table("assignments_duplicate").upsert(records, on_conflict="assignment_id").execute()
-           except Exception as e:
-               print("Supabase insert exception:", e)
+       try:
+           save_assignments(records)
+       except Exception as e:
+           print("Supabase insert exception:", e)
        print(f"{course_name}: saved {len(records)} Canvas assignments")
