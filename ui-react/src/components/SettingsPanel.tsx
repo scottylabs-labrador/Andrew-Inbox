@@ -1,4 +1,5 @@
-import { Box, Button, HStack, Text, VStack } from "@chakra-ui/react";
+import { Box, Button, HStack, Link, Text, VStack } from "@chakra-ui/react";
+import { PRIVACY_POLICY_URL } from "@/config";
 import { useState } from "react";
 import CanvasTokenForm from "./CanvasTokenForm";
 import EdTokenCard from "./EdTokenCard";
@@ -176,7 +177,16 @@ export default function SettingsPanel({
       </SettingsCard>
 
       <Text fontSize="12px" color="fg.subtle" textAlign="center" pt={1}>
-        Light and dark mode follow your system setting.
+        Light and dark mode follow your system setting.{" "}
+        <Link
+          href={PRIVACY_POLICY_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          color="fg.subtle"
+          textDecoration="underline"
+        >
+          Privacy Policy
+        </Link>
       </Text>
     </VStack>
   );

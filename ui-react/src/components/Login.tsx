@@ -1,4 +1,5 @@
-import { Box, Text, VStack, HStack, Input, Button } from "@chakra-ui/react";
+import { Box, Text, VStack, HStack, Input, Button, Link } from "@chakra-ui/react";
+import { PRIVACY_POLICY_URL } from "@/config";
 import { useState } from "react";
 import { removeKey, usePersistentState } from "@/storage";
 import { useForm } from "react-hook-form";
@@ -256,6 +257,21 @@ export default function LoginPage({
             >
               {mode === "signIn" ? "Sign In" : "Create Account"}
             </Button>
+            {mode === "signUp" && (
+              <Text fontSize="xs" color="fg.muted" textAlign="center">
+                By creating an account, you agree to our{" "}
+                <Link
+                  href={PRIVACY_POLICY_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  color="brand.fg"
+                  fontWeight="semibold"
+                >
+                  Privacy Policy
+                </Link>
+                .
+              </Text>
+            )}
           </VStack>
         </form>
       )}

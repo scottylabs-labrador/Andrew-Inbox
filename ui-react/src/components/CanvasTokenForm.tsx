@@ -1,4 +1,5 @@
 import { Box, Button, HStack, Input, Link, Popover, Portal, Text, VStack } from "@chakra-ui/react";
+import { PRIVACY_POLICY_URL } from "@/config";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -147,6 +148,18 @@ export default function CanvasTokenForm({ saveCanvasToken, onSaved, submitLabel,
         <Button type="submit" colorPalette="brand" size="sm" loading={isSubmitting}>
           {submitLabel}
         </Button>
+        <Text fontSize="xs" color="fg.muted" lineHeight="1.5">
+          Your token is stored securely and used only to fetch your coursework.{" "}
+          <Link
+            href={PRIVACY_POLICY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            color="brand.fg"
+            fontWeight="semibold"
+          >
+            Privacy Policy
+          </Link>
+        </Text>
       </VStack>
     </form>
   );
