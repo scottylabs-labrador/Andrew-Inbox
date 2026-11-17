@@ -1,14 +1,19 @@
 import { Box, Button, HStack, Link, Text, VStack } from "@chakra-ui/react";
 import { PRIVACY_POLICY_URL } from "@/config";
 import { useState } from "react";
+import { useTheme } from "next-themes";
 import CanvasTokenForm from "./CanvasTokenForm";
 import EdTokenCard from "./EdTokenCard";
+import SegmentedToggle from "./SegmentedToggle";
 import SettingsCard from "./SettingsCard";
 import type { EdTokenControls } from "./hooks/useAuth";
 import Logo from "./Logo";
 import { AUTO_FETCH_HOURS } from "./hooks/useBackend";
 import { timeAgo } from "@/dates";
 import manifest from "../../public/manifest.json";
+
+const THEMES = { System: "system", Light: "light", Dark: "dark" } as const;
+type ThemeLabel = keyof typeof THEMES;
 
 interface Props {
   username: string;
@@ -41,6 +46,9 @@ export default function SettingsPanel({
 }: Props) {
   const [replacing, setReplacing] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const themeLabel =
+    (Object.keys(THEMES) as ThemeLabel[]).find((label) => THEMES[label] === theme) ?? "System";
   // A broken token opens the form straight away
   const showForm = replacing || canvasTokenInvalid;
 
@@ -91,6 +99,15 @@ export default function SettingsPanel({
             Sign out
           </Button>
         </HStack>
+      </SettingsCard>
+
+      <SettingsCard title="Appearance">
+        <SegmentedToggle
+          options={Object.keys(THEMES)}
+          selected={themeLabel}
+          setSelected={(label) => setTheme(THEMES[label as ThemeLabel])}
+          aria-label="Theme"
+        />
       </SettingsCard>
 
       <SettingsCard title="Canvas">
@@ -177,7 +194,6 @@ export default function SettingsPanel({
       </SettingsCard>
 
       <Text fontSize="12px" color="fg.subtle" textAlign="center" pt={1}>
-        Light and dark mode follow your system setting.{" "}
         <Link
           href={PRIVACY_POLICY_URL}
           target="_blank"

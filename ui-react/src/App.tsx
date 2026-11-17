@@ -83,7 +83,7 @@ function App() {
   }
 
   return (
-    <Box overflow="hidden" display="inline-block" position="relative">
+    <Box overflow="hidden" display="inline-block" verticalAlign="top" position="relative">
       {page}
     </Box>
   );

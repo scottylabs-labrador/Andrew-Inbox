@@ -8,12 +8,15 @@ import { ANNOUNCEMENT_DAYS } from "@/dates";
 interface Props {
   // Already narrowed to this user, the last week and the class filter
   ann: Announce[];
+  unreadOnly: boolean;
   loading: boolean;
   toggleAnnounce: (id: string, currentStatus: boolean) => void;
 }
 
-export default function AnnoucementPage({ ann, loading, toggleAnnounce }: Props) {
+export default function AnnoucementPage({ ann, unreadOnly, loading, toggleAnnounce }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Looked up in the full list: opening an unread one marks it read, which
+  // drops it from the Unread view but must not close the dialog
   const selectedAnn = ann.find((a) => a.announcement_id === selectedId) ?? null;
 
   if (loading) {
@@ -24,7 +27,7 @@ export default function AnnoucementPage({ ann, loading, toggleAnnounce }: Props)
     );
   }
 
-  const sortedAnn = [...ann].sort(
+  const sortedAnn = ann.filter((a) => !unreadOnly || !a.is_read).sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
 
@@ -52,7 +55,7 @@ export default function AnnoucementPage({ ann, loading, toggleAnnounce }: Props)
         ) : (
           <Center py={10}>
             <Text color="fg.muted" fontSize="sm" textAlign="center">
-              No announcements in the last {ANNOUNCEMENT_DAYS} days!
+              No {unreadOnly ? "unread " : ""}announcements in the last {ANNOUNCEMENT_DAYS} days!
             </Text>
           </Center>
         )}

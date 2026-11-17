@@ -1,4 +1,4 @@
-import { Box, Text, VStack, HStack, Input, Button, Link } from "@chakra-ui/react";
+import { Box, Text, VStack, HStack, Input, Button, Link, Image } from "@chakra-ui/react";
 import { PRIVACY_POLICY_URL } from "@/config";
 import { useState } from "react";
 import { removeKey, usePersistentState } from "@/storage";
@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import ForgotPassword, { RESET_STEP_KEY } from "./ForgotPassword";
+import Logo from "./Logo";
 
 // Which screen (sign in / new account / forgot password) survives closing the
 // popup, e.g. to go and check your email for a reset code
@@ -84,7 +85,27 @@ export default function LoginPage({
       px={8}
       position="relative"
     >
+      <Image
+        src={`${import.meta.env.BASE_URL}cmu-logo.png`}
+        alt="Carnegie Mellon University"
+        position="absolute"
+        top={4}
+        left={4}
+        boxSize="32px"
+        borderRadius="4px"
+      />
+      <Image
+        src={`${import.meta.env.BASE_URL}scottylabs-logo.png`}
+        alt="ScottyLabs"
+        position="absolute"
+        top={4}
+        right={4}
+        boxSize="32px"
+        borderRadius="4px"
+      />
+
       <VStack gap={1} mb={6}>
+        <Logo size={64} />
         <Text
           fontSize="2xl"
           fontWeight="bold"

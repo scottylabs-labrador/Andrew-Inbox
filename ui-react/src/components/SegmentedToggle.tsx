@@ -1,13 +1,18 @@
 import { Box, HStack } from "@chakra-ui/react";
 
 interface Props {
+  options: string[];
   selected: string;
   setSelected: (val: string) => void;
+  "aria-label"?: string;
 }
 
-const options = ["All", "Day", "Week", "Month"];
-
-export default function TimeToggle({ selected, setSelected }: Props) {
+export default function SegmentedToggle({
+  options,
+  selected,
+  setSelected,
+  "aria-label": ariaLabel,
+}: Props) {
   return (
     <HStack
       gap={0}
@@ -17,6 +22,8 @@ export default function TimeToggle({ selected, setSelected }: Props) {
       borderWidth="1px"
       borderColor="border.muted"
       borderRadius="9px"
+      role="group"
+      aria-label={ariaLabel}
     >
       {options.map((opt) => {
         const active = selected === opt;

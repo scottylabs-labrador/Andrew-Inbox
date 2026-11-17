@@ -1,7 +1,7 @@
 import { Box, Button, HStack, IconButton, Text } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { LuChevronLeft, LuSettings, LuTriangleAlert } from "react-icons/lu";
-import TimeToggle from "./TimeToggle";
+import SegmentedToggle from "./SegmentedToggle";
 import TasksPage from "./Task/TasksPage";
 import AnnoucementPage from "./Announcement/AnnoucementPage";
 import Btn from "./Btn";
@@ -13,7 +13,7 @@ import { useAnnounce } from "./hooks/useAnnounce";
 import { getLastFetch, isFetchDue, isFetchPending, useBackend } from "./hooks/useBackend";
 import { CourseListContext } from "@/courseColors";
 import { storageKey, usePersistentState } from "@/storage";
-import { ANNOUNCEMENT_DAYS, isPostedInWindow } from "@/dates";
+import { isPostedInWindow } from "@/dates";
 import type { Creds } from "@/App";
 import type { EdTokenControls } from "./hooks/useAuth";
 
@@ -87,6 +87,10 @@ export default function MainView({ c, saveCanvasToken, ed, onSignOut }: Props) {
   );
   const [timeFilter, setTimeFilter] = usePersistentState(
     storageKey(c.userId, "time-filter"),
+    "All",
+  );
+  const [annFilter, setAnnFilter] = usePersistentState(
+    storageKey(c.userId, "ann-filter"),
     "All",
   );
   const [courseFilter, setCourseFilter] = usePersistentState<string | null>(
@@ -238,19 +242,19 @@ export default function MainView({ c, saveCanvasToken, ed, onSignOut }: Props) {
             {/* Filters */}
             <HStack px={4} py={3} gap={2} flexShrink={0}>
               {activeTab === "todo" ? (
-                <TimeToggle selected={timeFilter} setSelected={setTimeFilter} />
+                <SegmentedToggle
+                  options={["All", "Day", "Week", "Month"]}
+                  selected={timeFilter}
+                  setSelected={setTimeFilter}
+                  aria-label="Due date filter"
+                />
               ) : (
-                <Text fontSize="13px" color="fg.muted" flex={1}>
-                  Last {ANNOUNCEMENT_DAYS} days
-                  {unread(shownAnn) > 0 && (
-                    <>
-                      {" · "}
-                      <Text as="span" color="fg" fontWeight="semibold">
-                        {unread(shownAnn)} unread
-                      </Text>
-                    </>
-                  )}
-                </Text>
+                <SegmentedToggle
+                  options={["Unread", "All"]}
+                  selected={annFilter}
+                  setSelected={setAnnFilter}
+                  aria-label="Announcement filter"
+                />
               )}
               <Box w="128px" flexShrink={0}>
                 <CourseFilter
@@ -298,6 +302,7 @@ export default function MainView({ c, saveCanvasToken, ed, onSignOut }: Props) {
           ) : (
             <AnnoucementPage
               ann={shownAnn}
+              unreadOnly={annFilter === "Unread"}
               loading={announcements.loading}
               toggleAnnounce={announcements.toggleAnnounce}
             />
