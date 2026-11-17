@@ -1,0 +1,12 @@
+.git
+.env
+.vscode
+**/.venv
+**/venv
+**/__pycache__
+**/*.pyc
+**/node_modules
+ui-react
+andrew-inbox-extension
+andrew-inbox-extension.zip
+website

@@ -15,12 +15,11 @@ from pathlib import Path
 import dateutil.parser
 import requests
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from config import supabase
+from chrome_driver import new_chrome
 from courses import CANVAS_BASE_URL, course_label, course_number, get_active_courses
 from retention import save_assignments, worth_saving
 
@@ -230,9 +229,7 @@ def find_gradescope_launch_url(canvas_token, canvas_courses):
 
 def get_gradescope_session(launch_url):
     """Open the LTI launch in invisible Chrome and copy the login cookies out."""
-    options = Options()
-    options.add_argument("--headless=new")
-    driver = webdriver.Chrome(options=options)
+    driver = new_chrome()
     try:
         driver.get(launch_url)
         # Logged in once Gradescope has handed out its session cookie and we've

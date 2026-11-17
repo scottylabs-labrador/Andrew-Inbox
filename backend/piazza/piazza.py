@@ -4,9 +4,8 @@ from courses import course_number, get_active_courses
 import requests, time, re, html
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
+from chrome_driver import new_chrome
 from piazza_api import Piazza
 from piazza_api.rpc import PiazzaRPC
 from piazza_api.exceptions import RequestError
@@ -127,9 +126,7 @@ def find_piazza_launch_url(CANVAS_API_KEY):
 
 def get_piazza_cookies(launch_url):
     """Open the LTI launch in Chrome and grab the Piazza session cookies."""
-    options = Options()
-    options.add_argument("--headless=new")
-    driver = webdriver.Chrome(options=options)
+    driver = new_chrome()
 
     try:
         driver.get(launch_url)
