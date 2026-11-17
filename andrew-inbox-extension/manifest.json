@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Andrew Inbox",
   "version": "1.0",
-  "description": "Your Canvas, Piazza, and Gradescope assignments and announcements in one inbox.",
+  "description": "Your Canvas, Piazza, Gradescope, and Ed assignments and announcements in one inbox.",
   "icons": {
     "128": "AndrewInboxLogo128.png"
   },
@@ -11,20 +11,10 @@
     "default_icon": "AndrewInboxLogo128.png"
   },
   "host_permissions": [
-    "https://*.supabase.co/*",
-    "http://127.0.0.1:8000/*",
-    "http://localhost:8000/*"
+    "https://dsfkkzfmhrjdiqnnadgp.supabase.co/*",
+    "https://andrew-inbox-backend.onrender.com/*"
   ],
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "andrew-inbox@scottylabs.org",
-      "strict_min_version": "140.0",
-      "data_collection_permissions": {
-        "required": ["authenticationInfo", "personallyIdentifyingInfo"]
-      }
-    }
-  },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co http://127.0.0.1:8000 http://localhost:8000"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://dsfkkzfmhrjdiqnnadgp.supabase.co wss://dsfkkzfmhrjdiqnnadgp.supabase.co https://andrew-inbox-backend.onrender.com"
   }
 }
