@@ -155,6 +155,7 @@ export default function SettingsPanel({
               setJustSaved(true);
               onTokenSaved();
             }}
+            onCancel={canvasTokenInvalid ? undefined : () => setReplacing(false)}
           />
         )}
       </SettingsCard>

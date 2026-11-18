@@ -25,6 +25,8 @@ interface Props {
   // True when the page already shows CanvasTokenSteps, so the popover isn't needed.
   // Settings leaves it off and gets the steps in a "How do I get one?" popover.
   showSteps?: boolean;
+  // Settings "Replace token" only — omit when the saved token is broken or on first setup
+  onCancel?: () => void;
 }
 
 const TOKEN_STEPS = [
@@ -78,7 +80,13 @@ export function CanvasTokenSteps() {
 }
 
 // Used both for first-time setup and for replacing the token in Settings
-export default function CanvasTokenForm({ saveCanvasToken, onSaved, submitLabel, showSteps }: Props) {
+export default function CanvasTokenForm({
+  saveCanvasToken,
+  onSaved,
+  submitLabel,
+  showSteps,
+  onCancel,
+}: Props) {
   const [saveError, setSaveError] = useState<string | null>(null);
   const {
     register,
@@ -145,9 +153,16 @@ export default function CanvasTokenForm({ saveCanvasToken, onSaved, submitLabel,
           </Box>
         )}
 
-        <Button type="submit" colorPalette="brand" size="sm" loading={isSubmitting}>
-          {submitLabel}
-        </Button>
+        <HStack gap={2}>
+          <Button type="submit" colorPalette="brand" size="sm" flex={1} loading={isSubmitting}>
+            {submitLabel}
+          </Button>
+          {onCancel && (
+            <Button type="button" variant="outline" size="sm" onClick={onCancel}>
+              Cancel
+            </Button>
+          )}
+        </HStack>
         <Text fontSize="xs" color="fg.muted" lineHeight="1.5">
           Your token is stored securely and used only to fetch your coursework.{" "}
           <Link
