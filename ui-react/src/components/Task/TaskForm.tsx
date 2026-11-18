@@ -257,11 +257,6 @@ export default function TaskForm({ onSubmit, initial, onDelete, courses, draftKe
             Delete
           </Button>
         )}
-        <Dialog.ActionTrigger asChild>
-          <Button variant="ghost" h={10} px={4} borderRadius="9px" fontSize="14px" fontWeight="semibold" color="fg.muted">
-            Cancel
-          </Button>
-        </Dialog.ActionTrigger>
         <Button
           type="submit"
           colorPalette="brand"

@@ -8,6 +8,7 @@ import Btn from "./Btn";
 import CourseFilter from "./CourseFilter";
 import Logo from "./Logo";
 import SettingsPanel from "./SettingsPanel";
+import SitesMenu from "./SitesMenu";
 import { useCourses } from "./hooks/useCourses";
 import { useAnnounce } from "./hooks/useAnnounce";
 import { getLastFetch, isFetchDue, isFetchPending, useBackend } from "./hooks/useBackend";
@@ -203,6 +204,8 @@ export default function MainView({ c, saveCanvasToken, ed, onSignOut }: Props) {
                 badge={unread(recentAnn)}
                 onClick={() => setActiveTab("announcements")}
               />
+              <Box flex={1} />
+              <SitesMenu showEd={ed.hasToken} />
             </HStack>
 
             {canvasTokenInvalid && (

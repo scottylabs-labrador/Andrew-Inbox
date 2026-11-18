@@ -133,7 +133,7 @@ export default function TasksPage({
     deleteAssignment,
   } = useTasks(c?.userId, refreshKey);
   // Which dialog is open and what's typed in it survive closing the popup;
-  // closing the dialog itself (Cancel, X, Esc, Add/Save) throws the draft away
+  // closing the dialog itself (X, Esc, Add/Save) throws the draft away
   const userId = c?.userId ?? "";
   const addDraftKey = storageKey(userId, "add-draft");
   const editDraftKey = (taskId: string) => storageKey(userId, `edit-draft-${taskId}`);
