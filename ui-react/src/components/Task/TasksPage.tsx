@@ -9,7 +9,7 @@ import {
   Collapsible,
   Text,
 } from "@chakra-ui/react";
-import { useTasks, endOfDayIso, type Task } from "../hooks/useTasks";
+import { useTasks, dueIso, type Task } from "../hooks/useTasks";
 import TaskCard from "./TaskCard";
 import { LuPlus, LuChevronDown, LuChevronRight } from "react-icons/lu";
 import TaskForm, { type TaskFormData } from "./TaskForm";
@@ -20,7 +20,7 @@ import { removeKey, storageKey, usePersistentState } from "@/storage";
 
 interface Props {
   filter: string;
-  courseFilter: string | null;
+  hiddenCourses: string[];
   courses: string[];
   c: Creds | null;
   refreshKey: number;
@@ -119,7 +119,7 @@ function Section({
 
 export default function TasksPage({
   filter,
-  courseFilter,
+  hiddenCourses,
   courses,
   c,
   refreshKey,
@@ -174,7 +174,7 @@ export default function TasksPage({
       task.userId === c?.userId &&
       task.due >= start &&
       task.due < end &&
-      (!courseFilter || task.course === courseFilter),
+      !hiddenCourses.includes(task.course),
   );
 
   const byDueDate = (a: Task, b: Task) => a.due.getTime() - b.due.getTime();
@@ -279,9 +279,16 @@ export default function TasksPage({
 
         {upcomingTasks.length === 0 && overdueTasks.length === 0 && (
           <Center py={10}>
-            <Text color="fg.muted" textAlign="center" fontSize="sm">
-              {emptyMessages[filter] || emptyMessages.All}
-            </Text>
+            <VStack gap={1}>
+              <Text color="fg.muted" textAlign="center" fontSize="sm">
+                {emptyMessages[filter] || emptyMessages.All}
+              </Text>
+              {courses.some((course) => hiddenCourses.includes(course)) && (
+                <Text color="fg.muted" textAlign="center" fontSize="sm">
+                  You might want to select more courses.
+                </Text>
+              )}
+            </VStack>
           </Center>
         )}
       </VStack>
@@ -327,12 +334,13 @@ export default function TasksPage({
               assignment: editing.assignment,
               course: editing.course,
               due: toDay(editing.due),
+              time: `${pad(editing.due.getHours())}:${pad(editing.due.getMinutes())}`,
             }}
             onSubmit={(data: TaskFormData) => {
               updateAssignment(editing.id, {
                 assignment: data.assignment,
                 course: data.course,
-                due: new Date(endOfDayIso(data.due)),
+                due: new Date(dueIso(data.due, data.time)),
               });
               setEditing(null);
             }}

@@ -111,7 +111,8 @@ def send_canvas_to_supabase(user_id, CANVAS_TOKEN, gradescope=None):
                # Only used to decide what's worth saving; see save_assignments
                "status": submitted or f"{user_id} canvas {a["id"]}" in done_ids,
                "handed_in": submitted,
-               "platform": "Canvas"
+               "platform": "Canvas",
+               "link": a.get("html_url") or f"{CANVAS_BASE_URL}/courses/{course_id}/assignments/{a['id']}",
            })
 
        # Skip finished work over a month old and anything from long ago

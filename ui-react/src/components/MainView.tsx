@@ -11,9 +11,9 @@ import SettingsPanel from "./SettingsPanel";
 import SitesMenu from "./SitesMenu";
 import { useCourses } from "./hooks/useCourses";
 import { useAnnounce } from "./hooks/useAnnounce";
-import { getLastFetch, isFetchDue, isFetchPending, useBackend } from "./hooks/useBackend";
-import { CourseListContext } from "@/courseColors";
-import { storageKey, usePersistentState } from "@/storage";
+import { getLastFetch, isFetchDue, useBackend } from "./hooks/useBackend";
+import { CourseListContext, CoursePrefsProvider } from "@/courseColors";
+import { readJson, removeKey, storageKey, usePersistentState } from "@/storage";
 import { isPostedInWindow } from "@/dates";
 import type { Creds } from "@/App";
 import type { EdTokenControls } from "./hooks/useAuth";
@@ -90,17 +90,31 @@ export default function MainView({ c, saveCanvasToken, ed, onSignOut }: Props) {
     storageKey(c.userId, "time-filter"),
     "All",
   );
+  // Month was removed from the to-do filters
+  useEffect(() => {
+    if (timeFilter === "Month") setTimeFilter("All");
+  }, [timeFilter, setTimeFilter]);
   const [annFilter, setAnnFilter] = usePersistentState(
     storageKey(c.userId, "ann-filter"),
     "All",
   );
-  const [courseFilter, setCourseFilter] = usePersistentState<string | null>(
-    storageKey(c.userId, "course-filter"),
-    null,
+  // Course numbers switched off. A new class isn't in this list, so it shows up.
+  const [hiddenCourses, setHiddenCourses] = usePersistentState<string[]>(
+    storageKey(c.userId, "courses-hidden"),
+    [],
   );
   // Bumped after each successful fetch so pages re-load from Supabase
   const [refreshKey, setRefreshKey] = useState(0);
   const courses = useCourses(c.userId, refreshKey);
+
+  // The old menu stored one course (or null for all). Turn that into the new list once.
+  useEffect(() => {
+    const key = storageKey(c.userId, "course-filter");
+    const old = readJson<string | null>(key);
+    if (!old || courses.length === 0) return;
+    setHiddenCourses(courses.filter((course) => course !== old));
+    removeKey(key);
+  }, [c.userId, courses, setHiddenCourses]);
   const announcements = useAnnounce(c.userId, refreshKey);
   const {
     executeSync,
@@ -116,15 +130,14 @@ export default function MainView({ c, saveCanvasToken, ed, onSignOut }: Props) {
     if (await executeSync()) setRefreshKey((k) => k + 1);
   };
 
-  // Fetch by itself when the popup opens if the last fetch is over an hour old
-  // If a fetch was still running when the popup closed, show "Fetching…"
-  // again and wait for it to finish instead of looking idle.
+  // Fetch by itself when the popup opens if the last one started over an hour ago.
+  // Reopening while that fetch is still running on the server does not start
+  // another, and it doesn't show "Fetching" again.
   useEffect(() => {
-    const join = isFetchPending(c.userId);
-    if (!join && !isFetchDue(c.userId)) return;
+    if (!isFetchDue(c.userId)) return;
     // Let the popup draw first; the fetch takes a minute or two
     const timer = setTimeout(async () => {
-      if (await executeSync({ join })) setRefreshKey((k) => k + 1);
+      if (await executeSync()) setRefreshKey((k) => k + 1);
     }, 0);
     return () => clearTimeout(timer);
   }, [c.userId, executeSync]);
@@ -133,13 +146,13 @@ export default function MainView({ c, saveCanvasToken, ed, onSignOut }: Props) {
   const recentAnn = announcements.ann.filter(
     (a) => a.user_id === c.userId && isPostedInWindow(new Date(a.date), "Week"),
   );
-  const shownAnn = recentAnn.filter(
-    (a) => !courseFilter || a.course === courseFilter,
-  );
+  const shownAnn = recentAnn.filter((a) => !hiddenCourses.includes(a.course));
+  const coursesNarrowed = courses.some((course) => hiddenCourses.includes(course));
   const unread = (list: typeof recentAnn) => list.filter((a) => !a.is_read).length;
 
   return (
     <CourseListContext.Provider value={courses}>
+    <CoursePrefsProvider userId={c.userId}>
       <Box bg="bg" color="fg" w="400px" h="600px" display="flex" flexDirection="column">
         {showSettings ? (
           <HStack
@@ -201,7 +214,7 @@ export default function MainView({ c, saveCanvasToken, ed, onSignOut }: Props) {
               <TabButton
                 active={activeTab === "announcements"}
                 label="Announcements"
-                badge={unread(recentAnn)}
+                badge={unread(shownAnn)}
                 onClick={() => setActiveTab("announcements")}
               />
               <Box flex={1} />
@@ -246,14 +259,14 @@ export default function MainView({ c, saveCanvasToken, ed, onSignOut }: Props) {
             <HStack px={4} py={3} gap={2} flexShrink={0}>
               {activeTab === "todo" ? (
                 <SegmentedToggle
-                  options={["All", "Day", "Week", "Month"]}
+                  options={["All", "Day", "Week"]}
                   selected={timeFilter}
                   setSelected={setTimeFilter}
                   aria-label="Due date filter"
                 />
               ) : (
                 <SegmentedToggle
-                  options={["Unread", "All"]}
+                  options={["All", "Unread"]}
                   selected={annFilter}
                   setSelected={setAnnFilter}
                   aria-label="Announcement filter"
@@ -262,8 +275,8 @@ export default function MainView({ c, saveCanvasToken, ed, onSignOut }: Props) {
               <Box w="128px" flexShrink={0}>
                 <CourseFilter
                   courses={courses}
-                  selected={courseFilter}
-                  setSelected={setCourseFilter}
+                  hidden={hiddenCourses}
+                  setHidden={setHiddenCourses}
                 />
               </Box>
             </HStack>
@@ -297,7 +310,7 @@ export default function MainView({ c, saveCanvasToken, ed, onSignOut }: Props) {
           ) : activeTab === "todo" ? (
             <TasksPage
               filter={timeFilter}
-              courseFilter={courseFilter}
+              hiddenCourses={hiddenCourses}
               courses={courses}
               c={c}
               refreshKey={refreshKey}
@@ -306,12 +319,14 @@ export default function MainView({ c, saveCanvasToken, ed, onSignOut }: Props) {
             <AnnoucementPage
               ann={shownAnn}
               unreadOnly={annFilter === "Unread"}
+              coursesNarrowed={coursesNarrowed}
               loading={announcements.loading}
               toggleAnnounce={announcements.toggleAnnounce}
             />
           )}
         </Box>
       </Box>
+    </CoursePrefsProvider>
     </CourseListContext.Provider>
   );
 }

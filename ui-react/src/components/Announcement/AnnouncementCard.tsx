@@ -1,6 +1,6 @@
 import { Box, Text, HStack } from "@chakra-ui/react";
 import { platformName, type Announce } from "../hooks/useAnnounce";
-import { useCourseColor } from "@/courseColors";
+import { useCourseColor, useCourseName } from "@/courseColors";
 
 interface Props {
   ann: Announce;
@@ -8,6 +8,7 @@ interface Props {
 
 export default function AnnouncementCard({ ann }: Props) {
   const dotColor = useCourseColor(ann.course);
+  const courseName = useCourseName(ann.course);
   const displayDate = new Date(ann.date).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -46,7 +47,7 @@ export default function AnnouncementCard({ ann }: Props) {
         <HStack gap={1.5} fontSize="11.5px" color="fg.muted">
           <Box w="7px" h="7px" borderRadius="full" bg={dotColor} flexShrink={0} />
           <Text fontFamily="mono" whiteSpace="nowrap">
-            {ann.course}
+            {courseName}
           </Text>
           {ann.platform && <Text>· {platformName(ann.platform)}</Text>}
         </HStack>

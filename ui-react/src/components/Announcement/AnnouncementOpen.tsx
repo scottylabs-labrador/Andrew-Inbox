@@ -1,7 +1,7 @@
 import { Box, Button, Dialog, HStack, IconButton, Text, Link } from "@chakra-ui/react";
 import { AI_NOTE, platformName, type Announce } from "../hooks/useAnnounce";
 import { LuExternalLink, LuX } from "react-icons/lu";
-import { useCourseColor } from "@/courseColors";
+import { useCourseColor, useCourseName } from "@/courseColors";
 
 interface Props {
   a: Announce;
@@ -10,6 +10,7 @@ interface Props {
 
 export default function AnnoucementOpen({ a, onMarkUnread }: Props) {
   const dotColor = useCourseColor(a.course);
+  const courseName = useCourseName(a.course);
   const formattedDate = new Date(a.date).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -32,7 +33,7 @@ export default function AnnoucementOpen({ a, onMarkUnread }: Props) {
               flexShrink={0}
             >
               <Box w="7px" h="7px" borderRadius="full" bg={dotColor} />
-              {a.course}
+              {courseName}
             </HStack>
             <Text truncate>
               {a.platform ? `${platformName(a.platform)} · ` : ""}
@@ -85,7 +86,7 @@ export default function AnnoucementOpen({ a, onMarkUnread }: Props) {
             _hover={{ bg: "brand.emphasized" }}
           >
             <Link href={a.link} target="_blank" rel="noopener noreferrer" textDecoration="none">
-              Open original <LuExternalLink />
+              Open post <LuExternalLink />
             </Link>
           </Button>
         )}
