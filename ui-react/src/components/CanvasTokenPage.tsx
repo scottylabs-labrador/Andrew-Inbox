@@ -15,10 +15,10 @@ export default function CanvasTokenPage({ username, saveCanvasToken, onSignOut }
       bg="bg"
       w="400px"
       h="600px"
-      display="flex"
-      flexDirection="column"
-      justifyContent="center"
+      overflowY="auto"
       px={8}
+      py={6}
+      css={{ scrollbarWidth: "thin", scrollbarColor: "var(--chakra-colors-border) transparent" }}
     >
       <VStack gap={1} mb={5} textAlign="center">
         <Text fontSize="lg" fontWeight="bold">

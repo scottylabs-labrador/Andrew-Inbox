@@ -164,7 +164,7 @@ export default function CanvasTokenForm({
           )}
         </HStack>
         <Text fontSize="xs" color="fg.muted" lineHeight="1.5">
-          Your token is stored securely and used only to fetch your coursework.{" "}
+          We only use your Canvas token to read courses/assignments and open Piazza/Gradescope for sync — we never submit or change anything in Canvas through the API.{" "}
           <Link
             href={PRIVACY_POLICY_URL}
             target="_blank"

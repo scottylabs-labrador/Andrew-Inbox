@@ -1,9 +1,9 @@
-import { Box, Checkbox, HStack, IconButton, Text } from "@chakra-ui/react";
+import { Box, Checkbox, HStack, IconButton, Link, Text } from "@chakra-ui/react";
 import { useState } from "react";
-import { LuPencil } from "react-icons/lu";
+import { LuExternalLink, LuPencil } from "react-icons/lu";
 import type { Task } from "../hooks/useTasks";
 import { isOverdue as isPastDue, startOfDay } from "@/dates";
-import { useCourseColor } from "@/courseColors";
+import { useCourseColor, useCourseName } from "@/courseColors";
 
 interface TaskCardProps {
   taskd: Task;
@@ -19,6 +19,7 @@ export default function TaskCard({ taskd, onToggle, onEdit, timeOnly }: TaskCard
   const isOverdue = isPastDue(taskd.due, done);
   const dueToday = startOfDay(taskd.due).getTime() === startOfDay(new Date()).getTime();
   const dotColor = useCourseColor(taskd.course);
+  const courseName = useCourseName(taskd.course);
   // Animate only checks made just now, not tasks that were already done on load
   const [justTicked, setJustTicked] = useState(false);
 
@@ -30,6 +31,74 @@ export default function TaskCard({ taskd, onToggle, onEdit, timeOnly }: TaskCard
   });
 
   const dueColor = isOverdue ? "red.fg" : dueToday && !done ? "brand.fg" : "fg.muted";
+
+  const column = (
+    <>
+      <HStack justify="space-between" align="start" gap={2} w="100%">
+        <Text
+          className="task-title"
+          flex="1"
+          minW={0}
+          textAlign="left"
+          fontSize="14.5px"
+          fontWeight="semibold"
+          lineHeight="1.3"
+          textDecoration={done ? "line-through" : "none"}
+          wordBreak="break-word"
+        >
+          {taskd.assignment}
+        </Text>
+        {taskd.link && (
+          <Box color="fg.subtle" flexShrink={0} mt="1px" aria-hidden="true">
+            <LuExternalLink size={13} />
+          </Box>
+        )}
+        {onEdit && (
+          <IconButton
+            aria-label={`Edit ${taskd.assignment}`}
+            title="Edit"
+            size="2xs"
+            variant="ghost"
+            color="fg.muted"
+            flexShrink={0}
+            mt="-2px"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onEdit();
+            }}
+          >
+            <LuPencil />
+          </IconButton>
+        )}
+      </HStack>
+
+      <HStack gap="10px" fontSize="12.5px" color="fg.muted" minW={0} w="100%" justify="flex-start">
+        <HStack gap={1.5} flexShrink={0} fontFamily="mono" fontSize="11.5px" color="fg">
+          <Box w="7px" h="7px" borderRadius="full" bg={dotColor} />
+          <Text whiteSpace="nowrap" opacity={0.85}>
+            {courseName}
+          </Text>
+        </HStack>
+        <Text color="border.emphasized">·</Text>
+        <Text color={dueColor} truncate>
+          {formattedDate}
+        </Text>
+      </HStack>
+    </>
+  );
+
+  const columnProps = {
+    flex: "1",
+    minW: 0,
+    w: "100%",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "stretch",
+    justifyContent: "flex-start",
+    gap: "6px",
+    textAlign: "left",
+  } as const;
 
   // Keep the checkbox separate from the card content so opening/clicking an
   // assignment does not mark it complete.
@@ -84,49 +153,24 @@ export default function TaskCard({ taskd, onToggle, onEdit, timeOnly }: TaskCard
         </Checkbox.Control>
       </Checkbox.Root>
 
-      <Box flex="1" minW={0} display="flex" flexDirection="column" gap="6px">
-        <HStack justify="space-between" align="start" gap={2}>
-          <Text
-            fontSize="14.5px"
-            fontWeight="semibold"
-            lineHeight="1.3"
-            textDecoration={done ? "line-through" : "none"}
-            wordBreak="break-word"
-          >
-            {taskd.assignment}
-          </Text>
-          {onEdit && (
-            <IconButton
-              aria-label={`Edit ${taskd.assignment}`}
-              title="Edit"
-              size="2xs"
-              variant="ghost"
-              color="fg.muted"
-              flexShrink={0}
-              mt="-2px"
-              onClick={(e) => {
-                e.preventDefault();
-                onEdit();
-              }}
-            >
-              <LuPencil />
-            </IconButton>
-          )}
-        </HStack>
-
-        <HStack gap="10px" fontSize="12.5px" color="fg.muted" minW={0}>
-          <HStack gap={1.5} flexShrink={0} fontFamily="mono" fontSize="11.5px" color="fg">
-            <Box w="7px" h="7px" borderRadius="full" bg={dotColor} />
-            <Text whiteSpace="nowrap" opacity={0.85}>
-              {taskd.course}
-            </Text>
-          </HStack>
-          <Text color="border.emphasized">·</Text>
-          <Text color={dueColor} truncate>
-            {formattedDate}
-          </Text>
-        </HStack>
-      </Box>
+      {taskd.link ? (
+        <Link
+          {...columnProps}
+          href={taskd.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          cursor="pointer"
+          textDecoration="none"
+          color="inherit"
+          outline="none"
+          _hover={{ textDecoration: "none", "& .task-title": { textDecoration: "underline" } }}
+          _focus={{ outline: "none", boxShadow: "none" }}
+        >
+          {column}
+        </Link>
+      ) : (
+        <Box {...columnProps}>{column}</Box>
+      )}
     </Box>
   );
 }

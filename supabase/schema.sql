@@ -67,7 +67,8 @@ create table public.assignments_duplicate (
   points_possible numeric,
   retrieved_at timestamptz,
   status boolean not null default false,
-  platform text
+  platform text,
+  link text
 );
 create index on public.assignments_duplicate (user_id);
 

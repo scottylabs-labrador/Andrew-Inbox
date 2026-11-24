@@ -12,11 +12,13 @@ export interface Task {
   points: number | null;
   platform: string | null;
   userId: string;
+  link: string | null;
 }
 
-// "YYYY-MM-DD" from the task form -> 11:59 PM that day in the user's timezone
-export const endOfDayIso = (day: string) =>
-  new Date(`${day}T23:59:00`).toISOString();
+// "YYYY-MM-DD" plus "HH:mm" from the task form, in the user's timezone.
+// Hand-added work defaults to 11:59 PM when no time was picked.
+export const dueIso = (day: string, time = "23:59") =>
+  new Date(`${day}T${time}:00`).toISOString();
 
 // A row of the assignments_duplicate table (supabase/schema.sql)
 interface AssignmentRow {
@@ -28,6 +30,7 @@ interface AssignmentRow {
   points_possible: number | null;
   platform: string | null;
   user_id: string;
+  link: string | null;
 }
 
 // Keep the full timestamp. Cutting it to the date part used the UTC date, so
@@ -57,6 +60,7 @@ const loadTasks = async (userId: string): Promise<Task[] | null> => {
     points: row.points_possible,
     platform: row.platform,
     userId: row.user_id,
+    link: row.link ?? null,
   }));
   // Finished work more than a month old is hidden, but stays in the database:
   // its row is what remembers you ticked it off. Deleting it made the next
@@ -74,7 +78,7 @@ type CachedTask = Omit<Task, "due"> & { due: string };
 const readCachedTasks = (userId?: string): Task[] | null => {
   if (!userId) return null;
   const saved = readJson<CachedTask[]>(cacheKey(userId));
-  return saved ? saved.map((t) => ({ ...t, due: new Date(t.due) })) : null;
+  return saved ? saved.map((t) => ({ ...t, due: new Date(t.due), link: t.link ?? null })) : null;
 };
 
 // Pass the signed-in user's id to the hook
@@ -126,6 +130,7 @@ export const useTasks = (currentUsername?: string, refreshKey = 0) => {
       assignment: string;
       course: string;
       due: string;
+      time?: string;
       points?: number;
       platform?: string;
     },
@@ -135,8 +140,7 @@ export const useTasks = (currentUsername?: string, refreshKey = 0) => {
       ? crypto.randomUUID()
       : (Date.now() + Math.random()).toString();
 
-    // The form gives "YYYY-MM-DD"; treat hand-added work as due 11:59 PM that day
-    const isoDate = endOfDayIso(data.due);
+    const isoDate = dueIso(data.due, data.time);
 
     const { data: insertedData, error } = await supabase
       .from("assignments_duplicate")
@@ -168,6 +172,7 @@ export const useTasks = (currentUsername?: string, refreshKey = 0) => {
         points: newRow.points_possible,
         platform: newRow.platform,
         userId: newRow.user_id,
+        link: newRow.link ?? null,
       };
       setTodos((prev) => [newTask, ...prev]);
     }

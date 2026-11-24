@@ -50,8 +50,10 @@ export function isFetchPending(userId: string, now = new Date()) {
 export function isFetchDue(userId: string, now = new Date()) {
   const last = getLastFetch(userId);
   const attempt = readDate(lastAttemptKey(userId));
-  if (attempt && now.getTime() - attempt.getTime() < FETCH_RETRY_MINUTES * 6e4) return false;
-  return !last || now.getTime() - last.getTime() > AUTO_FETCH_HOURS * 36e5;
+  // The clock starts when a fetch is sent, not when it finishes. Closing the
+  // popup mid-fetch must not make the next open start another one.
+  const stamp = last && attempt ? (last > attempt ? last : attempt) : last || attempt;
+  return !stamp || now.getTime() - stamp.getTime() > AUTO_FETCH_HOURS * 36e5;
 }
 
 export const INVALID_TOKEN_MESSAGE =
@@ -70,7 +72,11 @@ export const useBackend = (userId?: string) => {
     setLoading(true);
     setError(null);
     setCanvasTokenInvalid(false);
-    if (userId && !join) saveDate(lastAttemptKey(userId));
+    if (userId && !join) {
+      saveDate(lastAttemptKey(userId));
+      // Count this hour even if the popup closes before the server answers.
+      saveDate(lastFetchKey(userId));
+    }
 
     try {
       // The backend works out who you are from your sign-in session.

@@ -44,6 +44,7 @@ class GradescopeAssignment:
     status_text: str
     handed_in: bool
     max_points: float | None
+    url: str | None = None
 
 
 def is_handed_in(status):
@@ -51,7 +52,18 @@ def is_handed_in(status):
     return bool(status) and "no submission" not in status
 
 
-def parse_course_page(soup):
+def gradescope_url(href, course_id, assignment_id):
+    """A page the student can open for this assignment."""
+    if href:
+        return href if href.startswith("http") else f"{GRADESCOPE_URL}{href}"
+    if course_id and assignment_id:
+        return f"{GRADESCOPE_URL}/courses/{course_id}/assignments/{assignment_id}"
+    if course_id:
+        return f"{GRADESCOPE_URL}/courses/{course_id}"
+    return None
+
+
+def parse_course_page(soup, course_id=None):
     """Read the assignments table on a student's Gradescope course page.
 
     gradescopeapi's parser drops the table's first and last <tr role="row">
@@ -99,6 +111,7 @@ def parse_course_page(soup):
             # A link to your submission means it's in, whatever the status says
             handed_in=bool(submitted_link) or is_handed_in(status_text),
             max_points=float(score.group(1)) if score else None,
+            url=gradescope_url(href, course_id, assignment_id),
         ))
     return assignments
 
@@ -280,7 +293,9 @@ def get_gradescope_assignments(canvas_token):
         if page.status_code != 200:
             print(f"Skipping Gradescope course {course.name}: HTTP {page.status_code}")
             continue
-        assignments = parse_course_page(BeautifulSoup(page.text, "html.parser"))
+        assignments = parse_course_page(
+            BeautifulSoup(page.text, "html.parser"), course.course_id
+        )
         course_name = course_name_for(course, canvas_courses)
         print(f"{course_name}: {len(assignments)} Gradescope assignments")
         results.extend((course_name, a) for a in assignments)
@@ -331,6 +346,7 @@ def send_gradescope_to_supabase(user_id, CANVAS_TOKEN):
             "status": a.handed_in or saved.get(assignment_id, False),
             "handed_in": a.handed_in,
             "platform": "Gradescope",
+            "link": a.url,
         })
 
     # Skip finished work over a month old and anything from long ago
